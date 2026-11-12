@@ -9,6 +9,10 @@ process.env.DIRECT_URL = '';
 process.env.SMTP_HOST = '';
 process.env.SMTP_USER = '';
 process.env.SMTP_PASS = '';
+process.env.PUSHER_APP_ID = '';
+process.env.PUSHER_KEY = '';
+process.env.PUSHER_SECRET = '';
+process.env.PUSHER_CLUSTER = '';
 // Deterministic signing fixtures for OAuth & Cloudinary cryptographic verification
 process.env.CLOUDINARY_CLOUD_NAME = 'chatsphere-test-cloud';
 process.env.CLOUDINARY_API_KEY = '123456789012345';

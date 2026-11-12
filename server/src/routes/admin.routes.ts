@@ -14,7 +14,7 @@ import {
 } from '../validation/schemas.ts';
 import { deleteMessagePersistent } from '../services/message.service.ts';
 import { recordAuditLog } from '../services/audit.service.ts';
-import { socketHub } from '../socket/hub.ts';
+import { realtimeHub } from '../realtime/hub.ts';
 import { Errors } from '../utils/errors.ts';
 
 export const adminRouter = Router();
@@ -238,7 +238,7 @@ adminRouter.patch(
       });
 
       if (input.status === 'SUSPENDED') {
-        await socketHub.disconnectUserSockets(targetUserId, 'account_suspended');
+        await realtimeHub.notifyUserSessionRevoked(targetUserId, 'account_suspended');
       }
 
       await recordAuditLog({
@@ -369,7 +369,7 @@ adminRouter.patch(
             data: { revokedAt: now },
           }),
         ]);
-        await socketHub.disconnectUserSockets(report.targetUserId, 'account_suspended');
+        await realtimeHub.notifyUserSessionRevoked(report.targetUserId, 'account_suspended');
       }
 
       const updated = await prisma.abuseReport.update({

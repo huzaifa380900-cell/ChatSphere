@@ -9,7 +9,11 @@ import React, {
   useState,
 } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter as useNextRouter } from 'next/navigation';
+import {
+  usePathname,
+  useRouter as useNextRouter,
+  useSearchParams,
+} from 'next/navigation';
 
 /**
  * Router adapter for the Next.js App Router.
@@ -57,10 +61,7 @@ export function useRouter(): AppRouterValue {
 }
 
 /**
- * Query-string access.
- *
- * Provided by <RouteSearchParamsProvider>, which every route that reads query
- * parameters must wrap its content in.
+ * Query-string access for routes wrapped in a search-params provider.
  */
 export function useRouterSearchParams(): { searchParams: URLSearchParams } {
   const ctx = useContext(SearchParamsContext);
@@ -129,10 +130,7 @@ export function NextRouterProvider({ children }: { children: React.ReactNode }) 
 }
 
 /**
- * Publishes query parameters that were resolved on the server.
- *
- * A Server Component page awaits its `searchParams` prop and passes the result
- * here, so the client component tree receives the real values on first paint.
+ * Publishes the supplied query parameters to client components.
  */
 export function RouteSearchParamsProvider({
   searchParams,
@@ -154,6 +152,33 @@ export function RouteSearchParamsProvider({
   }, [searchParams]);
 
   return <SearchParamsContext.Provider value={value}>{children}</SearchParamsContext.Provider>;
+}
+
+export function RouteSearchParamsFromUrlProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const urlSearchParams = useSearchParams();
+  const searchParams = useMemo(() => {
+    const params: QueryParams = {};
+    urlSearchParams.forEach((value, key) => {
+      const existing = params[key];
+      params[key] =
+        existing === undefined
+          ? value
+          : Array.isArray(existing)
+            ? [...existing, value]
+            : [existing, value];
+    });
+    return params;
+  }, [urlSearchParams]);
+
+  return (
+    <RouteSearchParamsProvider searchParams={searchParams}>
+      {children}
+    </RouteSearchParamsProvider>
+  );
 }
 
 /**

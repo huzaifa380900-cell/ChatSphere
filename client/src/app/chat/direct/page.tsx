@@ -1,19 +1,13 @@
 import { ProtectedView } from '../../../components/RouteGuards.tsx';
-import { RouteSearchParamsProvider } from '../../../context/RouterContext.tsx';
+import { RouteSearchParamsBoundary } from '../../../components/RouteSearchParamsBoundary.tsx';
 import { ChatWorkspacePage } from '../../../views/ChatWorkspacePage.tsx';
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
-
+export default function Page() {
   return (
-    <RouteSearchParamsProvider searchParams={params}>
+    <RouteSearchParamsBoundary>
       <ProtectedView>
         <ChatWorkspacePage forcedMode="DIRECT" />
       </ProtectedView>
-    </RouteSearchParamsProvider>
+    </RouteSearchParamsBoundary>
   );
 }

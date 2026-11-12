@@ -2,12 +2,10 @@ import fs from 'fs';
 import http from 'http';
 import path from 'path';
 import request from 'supertest';
-import { io as ioClient, Socket as ClientSocket } from 'socket.io-client';
 import { v2 as cloudinary } from 'cloudinary';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initializeDatabase, getPrisma, shutdownDatabase } from '../src/db/prisma.ts';
 import { createApiApp } from '../src/app.ts';
-import { createSocketServer } from '../src/socket/index.ts';
 import { cleanupOrphanedUploads } from '../src/services/cloudinary.service.ts';
 import { loadAndValidateEnv } from '../src/config/env.ts';
 import { finalizeUploadSchema } from '../src/validation/schemas.ts';
@@ -21,22 +19,9 @@ async function withCsrf(agent: SuperAgent): Promise<string> {
   return res.body.data.csrfToken as string;
 }
 
-function extractCookieHeaderFromAgent(agent: SuperAgent, baseUrl: string): string {
-  const jar = (agent as unknown as { jar: { getCookies: (info: { domain: string; path: string; secure: boolean; script: boolean }) => Array<{ name: string; value: string }> } }).jar;
-  const parsed = new URL(baseUrl);
-  const cookies = jar.getCookies({
-    domain: parsed.hostname,
-    path: '/',
-    secure: false,
-    script: false,
-  });
-  return cookies.map((c) => `${c.name}=${c.value}`).join('; ');
-}
-
 describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
   const testPgDir = path.resolve(process.cwd(), `.pgdata-e2e-${Date.now()}`);
   let httpServer: http.Server;
-  let ioServer: ReturnType<typeof createSocketServer>;
   let baseUrl = '';
 
   let aliceAgent: SuperAgent;
@@ -57,7 +42,6 @@ describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
 
     const app = createApiApp();
     httpServer = http.createServer(app);
-    ioServer = createSocketServer(httpServer);
 
     await new Promise<void>((resolve) => {
       httpServer.listen(0, '127.0.0.1', () => {
@@ -75,7 +59,6 @@ describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
   });
 
   afterAll(async () => {
-    ioServer?.close();
     if (httpServer) {
       await new Promise<void>((resolve) => httpServer.close(() => resolve()));
     }
@@ -513,49 +496,25 @@ describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
 
   it('8. Group conversations & strict membership revocation enforcement', async () => {
     const aliceCsrf = await withCsrf(aliceAgent);
-    const bobCookie = extractCookieHeaderFromAgent(bobAgent, baseUrl);
-    const bobSocket = await new Promise<ClientSocket>((resolve, reject) => {
-      const socket = ioClient(baseUrl, {
-        forceNew: true,
-        transports: ['websocket'],
-        extraHeaders: { Cookie: bobCookie },
-        reconnection: false,
-      });
-      socket.once('connect', () => resolve(socket));
-      socket.once('connect_error', reject);
-    });
+    const grpRes = await aliceAgent
+      .post('/api/conversations/group')
+      .set('X-CSRF-Token', aliceCsrf)
+      .send({
+        name: 'Core Incident Response',
+        description: 'Production security ops room',
+        memberIds: [bobId, carolId],
+        onlyAdminsCanPost: false,
+      })
+      .expect(201);
 
-    try {
-      const inviteNotificationPromise = new Promise<{
-        notification: { type: string; conversationId: string; userId: string };
-      }>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('Timed out waiting for group invite notification.')), 3000);
-        bobSocket.once('notification:new', (payload) => {
-          clearTimeout(timer);
-          resolve(payload);
-        });
-      });
-
-      const grpRes = await aliceAgent
-        .post('/api/conversations/group')
-        .set('X-CSRF-Token', aliceCsrf)
-        .send({
-          name: 'Core Incident Response',
-          description: 'Production security ops room',
-          memberIds: [bobId, carolId],
-          onlyAdminsCanPost: false,
-        })
-        .expect(201);
-
-      groupConvId = grpRes.body.data.conversation.id;
-      expect(grpRes.body.data.conversation.members.length).toBe(3);
-      const inviteNotification = await inviteNotificationPromise;
-      expect(inviteNotification.notification.type).toBe('GROUP_INVITE');
-      expect(inviteNotification.notification.conversationId).toBe(groupConvId);
-      expect(inviteNotification.notification.userId).toBe(bobId);
-    } finally {
-      bobSocket.disconnect();
-    }
+    groupConvId = grpRes.body.data.conversation.id;
+    expect(grpRes.body.data.conversation.members.length).toBe(3);
+    const bobNotifications = await bobAgent.get('/api/notifications').expect(200);
+    const inviteNotification = bobNotifications.body.data.notifications.find(
+      (notification: { type: string; conversationId: string; userId: string }) =>
+        notification.type === 'GROUP_INVITE' && notification.conversationId === groupConvId
+    );
+    expect(inviteNotification?.userId).toBe(bobId);
 
     // Carol can view messages while she is an active member
     await carolAgent.get(`/api/conversations/${groupConvId}/messages`).expect(200);
@@ -807,151 +766,57 @@ describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
     expect(afterClean.status).toBe('ORPHANED');
   });
 
-  it('10. Real-time authenticated Socket.IO messaging, typing, presence & reconnection delta sync', async () => {
-    // Unauthenticated socket handshake must be rejected
-    const unauthSocket = ioClient(baseUrl, {
-      forceNew: true,
-      transports: ['websocket'],
-      reconnection: false,
-    });
-    const unauthErr = await new Promise<Error>((resolve) => {
-      unauthSocket.on('connect_error', (err) => resolve(err));
-    });
-    expect(unauthErr.message).toBe('AUTH_REQUIRED');
-    unauthSocket.close();
+  it('10. Realtime authorization, typing, and reconnect sync use authenticated HTTP APIs', async () => {
+    const unauthenticated = await request(baseUrl)
+      .post('/api/realtime/auth')
+      .send({ socket_id: '123.456', channel_name: `private-user-${aliceId}` })
+      .expect(401);
+    expect(unauthenticated.body.error.code).toBe('UNAUTHORIZED');
 
-    // Connect Alice and Bob with HttpOnly cookies
-    const aliceCookie = extractCookieHeaderFromAgent(aliceAgent, baseUrl);
-    const bobCookie = extractCookieHeaderFromAgent(bobAgent, baseUrl);
+    const aliceCsrf = await withCsrf(aliceAgent);
+    const channelAuth = await aliceAgent
+      .post('/api/realtime/auth')
+      .set('X-CSRF-Token', aliceCsrf)
+      .send({ socket_id: '123.456', channel_name: `private-user-${aliceId}` })
+      .expect(503);
+    expect(channelAuth.body.error.code).toBe('PUSHER_NOT_CONFIGURED');
 
-    const connectSocket = (cookieHeader: string) =>
-      new Promise<ClientSocket>((resolve, reject) => {
-        const s = ioClient(baseUrl, {
-          forceNew: true,
-          transports: ['websocket'],
-          extraHeaders: { Cookie: cookieHeader },
-          reconnection: false,
-        });
-        s.once('connect', () => resolve(s));
-        s.once('connect_error', (err) => reject(err));
-      });
+    const invalidMembership = await aliceAgent
+      .post('/api/realtime/typing')
+      .set('X-CSRF-Token', aliceCsrf)
+      .send({ conversationId: 'not-a-conversation', isTyping: true })
+      .expect(403);
+    expect(invalidMembership.body.error.code).toBe('NOT_CONVERSATION_MEMBER');
 
-    const aliceSocket = await connectSocket(aliceCookie);
-    const bobSocket = await connectSocket(bobCookie);
+    const typing = await aliceAgent
+      .post('/api/realtime/typing')
+      .set('X-CSRF-Token', aliceCsrf)
+      .send({ conversationId: directConvId, isTyping: true })
+      .expect(503);
+    expect(typing.body.error.code).toBe('PUSHER_NOT_CONFIGURED');
 
-    try {
-      // Typing indicator broadcast from Alice to Bob
-      const typingPromise = new Promise<{ conversationId: string; userId: string; isTyping: boolean }>(
-        (resolve) => {
-          bobSocket.once('typing:update', (payload) => resolve(payload));
-        }
-      );
-      aliceSocket.emit('typing:start', { conversationId: directConvId });
-      const typingEvent = await typingPromise;
-      expect(typingEvent.conversationId).toBe(directConvId);
-      expect(typingEvent.userId).toBe(aliceId);
-      expect(typingEvent.isTyping).toBe(true);
-
-      // Real-time message send from Alice -> persisted in PostgreSQL before ack -> delivered to Bob
-      const bobIncomingPromise = new Promise<{ message: { id: string; content: string } }>((resolve) => {
-        bobSocket.once('message:new', (payload) => resolve(payload));
-      });
-
-      const invalidMessageAck = await new Promise<{
-        success: boolean;
-        error?: { message: string };
-      }>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('Timed out waiting for invalid message acknowledgment.')), 3000);
-        aliceSocket.emit(
-          'message:send',
-          {
-            conversationId: directConvId,
-            clientMessageId: 'short',
-            content: 'Invalid message',
-          },
-          (response: { success: boolean; error?: { message: string } }) => {
-            clearTimeout(timer);
-            resolve(response);
-          }
-        );
-      });
-      expect(invalidMessageAck.success).toBe(false);
-      expect(invalidMessageAck.error?.message).toBeTruthy();
-
-      const sendAck = await new Promise<{ success: boolean; data: { message: { id: string } } }>((resolve) => {
-        aliceSocket.emit(
-          'message:send',
-          {
-            conversationId: directConvId,
-            clientMessageId: 'rt_socket_msg_01',
-            content: 'Live over Socket.IO!',
-            type: 'TEXT',
-          },
-          (resp: { success: boolean; data: { message: { id: string } } }) => resolve(resp)
-        );
-      });
-
-      expect(sendAck.success).toBe(true);
-      const bobIncoming = await bobIncomingPromise;
-      expect(bobIncoming.message.id).toBe(sendAck.data.message.id);
-      expect(bobIncoming.message.content).toBe('Live over Socket.IO!');
-
-      // Simulate Bob disconnecting, Alice sending a message while Bob is offline, and Bob running sync:reconnect
-      const beforeDisconnectIso = new Date(Date.now() - 50).toISOString();
-      bobSocket.disconnect();
-
-      const aliceCsrf = await withCsrf(aliceAgent);
+    const since = new Date().toISOString();
+    for (const [clientMessageId, content] of [
+      ['realtime_http_msg_01', 'Persisted through the serverless HTTP API'],
+      ['realtime_http_msg_02', 'Available through reconnect delta sync'],
+    ]) {
       await aliceAgent
         .post(`/api/conversations/${directConvId}/messages`)
         .set('X-CSRF-Token', aliceCsrf)
-        .send({
-          clientMessageId: 'offline_missed_msg_01',
-          content: 'Sent while Bob was disconnected',
-        })
+        .send({ clientMessageId, content })
         .expect(201);
-
-      const bobReconnected = await connectSocket(bobCookie);
-      const syncAck = await new Promise<{
-        success: boolean;
-        data: { missedMessages: Array<{ clientMessageId: string; content: string }> };
-      }>((resolve) => {
-        bobReconnected.emit(
-          'sync:reconnect',
-          { conversationId: directConvId, since: beforeDisconnectIso },
-          (resp: {
-            success: boolean;
-            data: { missedMessages: Array<{ clientMessageId: string; content: string }> };
-          }) => resolve(resp)
-        );
-      });
-
-      expect(syncAck.success).toBe(true);
-      expect(
-        syncAck.data.missedMessages.some((m) => m.clientMessageId === 'offline_missed_msg_01')
-      ).toBe(true);
-      bobReconnected.disconnect();
-    } finally {
-      aliceSocket.disconnect();
-      bobSocket.disconnect();
     }
+
+    const delta = await bobAgent
+      .get(`/api/conversations/${directConvId}/messages`)
+      .query({ after: since })
+      .expect(200);
+    expect(
+      delta.body.data.messages.map((message: { clientMessageId: string }) => message.clientMessageId)
+    ).toEqual(['realtime_http_msg_01', 'realtime_http_msg_02']);
   });
 
-  it('11. Abuse report moderation & suspended account immediate session/socket revocation', async () => {
-    const carolCookie = extractCookieHeaderFromAgent(carolAgent, baseUrl);
-    const carolSocket = await new Promise<ClientSocket>((resolve, reject) => {
-      const s = ioClient(baseUrl, {
-        forceNew: true,
-        transports: ['websocket'],
-        extraHeaders: { Cookie: carolCookie },
-        reconnection: false,
-      });
-      s.once('connect', () => resolve(s));
-      s.once('connect_error', reject);
-    });
-
-    const forceLogoutPromise = new Promise<{ reason: string }>((resolve) => {
-      carolSocket.once('auth:force_logout', (payload) => resolve(payload));
-    });
+  it('11. Abuse report moderation & suspended account access revocation', async () => {
 
     // Alice submits an abuse report against Carol
     const aliceCsrf = await withCsrf(aliceAgent);
@@ -977,10 +842,6 @@ describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
         suspendTargetUser: true,
       })
       .expect(200);
-
-    const forceLogout = await forceLogoutPromise;
-    expect(forceLogout.reason).toBe('account_suspended');
-    carolSocket.close();
 
     // Suspended Carol cannot call protected endpoints or log back in
     await carolAgent.get('/api/conversations').expect(403);

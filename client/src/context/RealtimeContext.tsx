@@ -8,7 +8,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { io, Socket } from 'socket.io-client';
+import Pusher from 'pusher-js';
+import type Members from 'pusher-js/types/src/core/channels/members';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext.tsx';
 import { apiClient, extractApiError } from '../lib/api.ts';
@@ -26,7 +27,7 @@ interface TypingUser {
   expiresAt: number;
 }
 
-interface ChatSocketContextValue {
+interface RealtimeContextValue {
   connected: boolean;
   reconnecting: boolean;
   conversations: ConversationItem[];
@@ -57,7 +58,7 @@ interface ChatSocketContextValue {
   emitTyping: (conversationId: string, isTyping: boolean) => void;
 }
 
-const ChatSocketContext = createContext<ChatSocketContextValue | null>(null);
+const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
 function mergeMessagesIdempotent(existing: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
   const byId = new Map<string, ChatMessage>();
@@ -92,9 +93,9 @@ function sortConversations(list: ConversationItem[]): ConversationItem[] {
   });
 }
 
-export function ChatSocketProvider({ children }: { children: React.ReactNode }) {
+export function ChatRealtimeProvider({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const socketRef = useRef<Socket | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
   const activeConvRef = useRef<string | null>(null);
   const lastSyncedIsoRef = useRef<string>(new Date().toISOString());
   const pendingAttachmentsMemoryRef = useRef<Map<string, MessageAttachmentItem[]>>(new Map());
@@ -158,11 +159,7 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
         prev.map((c) => (c.id === conversationId ? { ...c, unreadCount: 0 } : c))
       );
       try {
-        if (socketRef.current?.connected) {
-          socketRef.current.emit('conversation:read', { conversationId });
-        } else {
-          await apiClient.post(`/conversations/${conversationId}/read`);
-        }
+        await apiClient.post(`/conversations/${conversationId}/read`);
         void refreshNotifications();
       } catch {
         // Non-blocking
@@ -234,15 +231,20 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
     return () => clearInterval(timer);
   }, []);
 
-  // Connect and manage single authenticated Socket.IO subscription lifecycle
+  const conversationChannelIds = conversations
+    .map((conversation) => conversation.id)
+    .sort()
+    .join(',');
+
+  // Connect and manage authenticated Pusher subscriptions.
   useEffect(() => {
     if (!user) {
-      if (socketRef.current) {
-        socketRef.current.removeAllListeners();
-        socketRef.current.disconnect();
-        socketRef.current = null;
+      if (pusherRef.current) {
+        pusherRef.current.disconnect();
+        pusherRef.current = null;
       }
       setConnected(false);
+      setReconnecting(false);
       setConversations([]);
       setMessagesByConversation({});
       setNotifications([]);
@@ -254,22 +256,31 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
     void refreshConversations();
     void refreshNotifications();
 
-    // Socket.IO connects directly to the backend origin (WebSocket upgrades are
-    // not proxied through the Next.js rewrite), falling back to the current
-    // origin when the backend is served from the same host.
-    const socketUrl =
-      process.env.NODE_ENV === 'production'
-        ? window.location.origin
-        : process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
-    const socket = io(socketUrl, {
-      withCredentials: true,
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 6000,
-    });
+    const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
+    if (!key || !cluster) {
+      setConnected(false);
+      setReconnecting(false);
+      toast.error('Realtime messaging is not configured. Add the Pusher public key and cluster.');
+      return;
+    }
 
-    socketRef.current = socket;
+    const pusher = new Pusher(key, {
+      cluster,
+      forceTLS: true,
+      authorizer: (channel) => ({
+        authorize: (socketId, callback) => {
+          void apiClient
+            .post('/realtime/auth', {
+              socket_id: socketId,
+              channel_name: channel.name,
+            })
+            .then((response) => callback(null, response.data))
+            .catch((error: Error) => callback(error, null));
+        },
+      }),
+    });
+    pusherRef.current = pusher;
 
     const handleConnect = () => {
       setConnected(true);
@@ -277,50 +288,33 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
       void refreshNotifications();
 
       const currentActive = activeConvRef.current;
-      socket.emit(
-        'sync:reconnect',
-        {
-          conversationId: currentActive ?? undefined,
-          since: lastSyncedIsoRef.current,
-        },
-        (resp?: {
-          success: boolean;
-          data?: { syncedAt: string; missedMessages: ChatMessage[] };
-        }) => {
-          if (resp?.success && resp.data) {
-            lastSyncedIsoRef.current = resp.data.syncedAt;
-            if (currentActive && resp.data.missedMessages.length > 0) {
+      if (currentActive) {
+        const since = lastSyncedIsoRef.current;
+        void apiClient
+          .get<{
+            success: boolean;
+            data: { messages: ChatMessage[] };
+          }>(`/conversations/${currentActive}/messages`, { params: { after: since } })
+          .then((response) => {
+            lastSyncedIsoRef.current = new Date().toISOString();
+            if (response.data.data.messages.length > 0) {
               setMessagesByConversation((prev) => ({
                 ...prev,
                 [currentActive]: mergeMessagesIdempotent(
                   prev[currentActive] || [],
-                  resp.data!.missedMessages
+                  response.data.data.messages
                 ),
               }));
             }
-          }
-          void refreshConversations();
-        }
-      );
-    };
-
-    const handleDisconnect = () => {
-      setConnected(false);
-    };
-
-    const handleReconnectAttempt = () => {
-      setReconnecting(true);
-    };
-
-    const handleConnectError = async (err: Error) => {
-      if (err.message === 'AUTH_INVALID' || err.message === 'AUTH_REQUIRED') {
-        try {
-          await apiClient.post('/auth/refresh');
-          socket.connect();
-        } catch {
-          // Session truly expired
-        }
+          })
+          .catch((error: unknown) => toast.error(extractApiError(error).message));
       }
+      void refreshConversations();
+    };
+
+    const handleConnectionState = (states: { current: string }) => {
+      setConnected(states.current === 'connected');
+      setReconnecting(states.current === 'connecting' || states.current === 'unavailable');
     };
 
     const handleForceLogout = ({ reason }: { reason: string }) => {
@@ -554,32 +548,153 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
       if (!notification.isRead) setUnreadNotificationCount((count) => count + 1);
     };
 
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    socket.io.on('reconnect_attempt', handleReconnectAttempt);
-    socket.on('connect_error', handleConnectError);
-    socket.on('auth:force_logout', handleForceLogout);
-    socket.on('message:new', handleMessageNew);
-    socket.on('conversation:activity', handleConversationActivity);
-    socket.on('message:edited', handleMessageEdited);
-    socket.on('message:deleted', handleMessageDeleted);
-    socket.on('message:receipts_updated', handleReceiptsUpdated);
-    socket.on('typing:update', handleTypingUpdate);
-    socket.on('presence:update', handlePresenceUpdate);
-    socket.on('conversation:created', handleConversationCreated);
-    socket.on('conversation:removed', handleConversationRemoved);
-    socket.on('conversation:updated', refreshConversations);
-    socket.on('conversation:members_changed', refreshConversations);
-    socket.on('conversation:member_left', refreshConversations);
-    socket.on('notification:new', handleNotificationNew);
+    const handleRealtimeEvent = (eventName: string, payload: unknown) => {
+      switch (eventName) {
+        case 'auth:force_logout':
+          handleForceLogout(payload as { reason: string });
+          break;
+        case 'message:new':
+          handleMessageNew(payload as { message: ChatMessage });
+          break;
+        case 'conversation:activity':
+          handleConversationActivity(
+            payload as {
+              conversationId: string;
+              lastMessage: ChatMessage;
+              lastMessageAt: string;
+              senderId: string;
+            }
+          );
+          break;
+        case 'message:edited':
+          handleMessageEdited(payload as { message: ChatMessage });
+          break;
+        case 'message:deleted':
+          handleMessageDeleted(
+            payload as { conversationId: string; messageId: string; deletedAt: string }
+          );
+          break;
+        case 'message:receipts_updated':
+          handleReceiptsUpdated(
+            payload as {
+              conversationId: string;
+              userId: string;
+              status: ReceiptStatus;
+              messageIds: string[];
+              timestamp: string;
+            }
+          );
+          break;
+        case 'typing:update':
+          handleTypingUpdate(
+            payload as {
+              conversationId: string;
+              userId: string;
+              displayName: string;
+              isTyping: boolean;
+            }
+          );
+          break;
+        case 'conversation:created':
+          handleConversationCreated(payload as { conversation: ConversationItem });
+          break;
+        case 'conversation:removed':
+          handleConversationRemoved(payload as { conversationId: string });
+          break;
+        case 'conversation:updated':
+        case 'conversation:members_changed':
+        case 'conversation:member_left':
+          void refreshConversations();
+          break;
+        case 'notification:new':
+          handleNotificationNew(payload as { notification: NotificationItem });
+          break;
+      }
+    };
+
+    pusher.connection.bind('connected', handleConnect);
+    pusher.connection.bind('state_change', handleConnectionState);
+    pusher.bind_global(handleRealtimeEvent);
+    const userChannel = pusher.subscribe(`private-user-${user.id}`);
+    userChannel.bind('pusher:subscription_error', () => {
+      toast.error('Realtime authentication failed. Please sign in again.');
+    });
+
+    const presenceMemberChanged = (
+      conversationId: string,
+      member: { id: string; info: { onlineStatusVisible?: boolean } },
+      isOnline: boolean
+    ) => {
+      if (member.info?.onlineStatusVisible === false) return;
+      handlePresenceUpdate({
+        userId: member.id,
+        isOnline,
+        lastSeenAt: new Date().toISOString(),
+      });
+      if (!isOnline) {
+        setTypingByConversation((prev) => ({
+          ...prev,
+          [conversationId]: (prev[conversationId] || []).filter(
+            (typingUser) => typingUser.userId !== member.id
+          ),
+        }));
+      }
+    };
+
+    const subscribedConversationIds = conversationChannelIds
+      ? conversationChannelIds.split(',')
+      : [];
+    for (const conversationId of subscribedConversationIds) {
+      const channel = pusher.subscribe(`private-conversation-${conversationId}`);
+      channel.bind('pusher:subscription_error', () => {
+        toast.error('Could not subscribe to a conversation’s realtime updates.');
+      });
+
+      const presenceChannel = pusher.subscribe(
+        `presence-conversation-${conversationId}`
+      );
+      presenceChannel.bind('pusher:subscription_succeeded', (members: Members) => {
+        members.each((member: { id: string; info: { onlineStatusVisible?: boolean } }) =>
+          presenceMemberChanged(conversationId, member, true)
+        );
+      });
+      presenceChannel.bind(
+        'pusher:member_added',
+        (member: { id: string; info: { onlineStatusVisible?: boolean } }) =>
+          presenceMemberChanged(conversationId, member, true)
+      );
+      presenceChannel.bind(
+        'pusher:member_removed',
+        (member: { id: string; info: { onlineStatusVisible?: boolean } }) =>
+          presenceMemberChanged(conversationId, member, false)
+      );
+      presenceChannel.bind('pusher:subscription_error', () => {
+        toast.error('Could not subscribe to conversation presence updates.');
+      });
+    }
+
+    if (pusher.connection.state === 'connected') {
+      handleConnect();
+    } else {
+      handleConnectionState({ current: pusher.connection.state });
+    }
 
     return () => {
-      socket.removeAllListeners();
-      socket.io.off('reconnect_attempt', handleReconnectAttempt);
-      socket.disconnect();
-      socketRef.current = null;
+      pusher.unbind_global(handleRealtimeEvent);
+      pusher.connection.unbind('connected', handleConnect);
+      pusher.connection.unbind('state_change', handleConnectionState);
+      pusher.disconnect();
+      pusherRef.current = null;
     };
-  }, [user, logout, refreshConversations, refreshNotifications, markConversationRead, setActiveConversationId]);
+  }, [
+    user,
+    logout,
+    refreshConversations,
+    refreshNotifications,
+    markConversationRead,
+    setActiveConversationId,
+    conversationChannelIds,
+  ]);
 
   const sendMessageOptimistic = useCallback(
     async (params: {
@@ -661,41 +776,11 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
       };
 
       try {
-        let savedMessage: ChatMessage | null = null;
-
-        if (socketRef.current?.connected) {
-          const ack = await new Promise<{
-            success: boolean;
-            data?: { message: ChatMessage };
-            error?: { message: string };
-          }>((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error('Socket acknowledgment timeout')), 20000);
-            socketRef.current!.emit(
-              'message:send',
-              { conversationId: params.conversationId, ...payload },
-              (response: {
-                success: boolean;
-                data?: { message: ChatMessage };
-                error?: { message: string };
-              }) => {
-                clearTimeout(timeout);
-                resolve(response);
-              }
-            );
-          });
-
-          if (!ack.success || !ack.data?.message) {
-            throw new Error(ack.error?.message || 'Message delivery failed.');
-          }
-          savedMessage = ack.data.message;
-        } else {
-          // Reliable HTTP REST fallback using the exact same idempotency clientMessageId
-          const res = await apiClient.post<{
-            success: boolean;
-            data: { message: ChatMessage };
-          }>(`/conversations/${params.conversationId}/messages`, payload);
-          savedMessage = res.data.data.message;
-        }
+        const res = await apiClient.post<{
+          success: boolean;
+          data: { message: ChatMessage };
+        }>(`/conversations/${params.conversationId}/messages`, payload);
+        const savedMessage = res.data.data.message;
 
         pendingAttachmentsMemoryRef.current.delete(clientMessageId);
 
@@ -779,12 +864,13 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const emitTyping = useCallback((conversationId: string, isTyping: boolean) => {
-    if (!socketRef.current?.connected) return;
-    socketRef.current.emit(isTyping ? 'typing:start' : 'typing:stop', { conversationId });
+    void apiClient
+      .post('/realtime/typing', { conversationId, isTyping })
+      .catch((error: unknown) => toast.error(extractApiError(error).message));
   }, []);
 
   return (
-    <ChatSocketContext.Provider
+    <RealtimeContext.Provider
       value={{
         connected,
         reconnecting,
@@ -810,14 +896,14 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
       }}
     >
       {children}
-    </ChatSocketContext.Provider>
+    </RealtimeContext.Provider>
   );
 }
 
-export function useChatSocket() {
-  const ctx = useContext(ChatSocketContext);
+export function useChatRealtime() {
+  const ctx = useContext(RealtimeContext);
   if (!ctx) {
-    throw new Error('useChatSocket must be used inside ChatSocketProvider');
+    throw new Error('useChatRealtime must be used inside ChatRealtimeProvider');
   }
   return ctx;
 }

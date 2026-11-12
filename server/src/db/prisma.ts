@@ -73,6 +73,15 @@ async function applySqlMigrationsToPglite(pg: PGlite) {
   }
 }
 
+function getDatabaseUrlForRuntime(databaseUrl: string): string {
+  if (!process.env.VERCEL) return databaseUrl;
+  const url = new URL(databaseUrl);
+  if (!url.searchParams.has('connection_limit')) {
+    url.searchParams.set('connection_limit', '1');
+  }
+  return url.toString();
+}
+
 export async function initializeDatabase(customDataDir?: string): Promise<PrismaClient> {
   if (prismaInstance) return prismaInstance;
   if (initPromise) return initPromise;
@@ -80,11 +89,12 @@ export async function initializeDatabase(customDataDir?: string): Promise<Prisma
   initPromise = (async () => {
     if (env.hasExternalDatabaseUrl && !customDataDir) {
       activeDatabaseMode = 'neon-postgresql';
-      process.env.DATABASE_URL = env.databaseUrl;
+      const databaseUrl = getDatabaseUrlForRuntime(env.databaseUrl!);
+      process.env.DATABASE_URL = databaseUrl;
       process.env.DIRECT_URL = env.directUrl ?? env.databaseUrl;
 
       prismaInstance = new PrismaClient({
-        datasources: { db: { url: env.databaseUrl } },
+        datasources: { db: { url: databaseUrl } },
         log: env.nodeEnv === 'development' ? ['warn', 'error'] : ['error'],
       });
       await prismaInstance.$connect();

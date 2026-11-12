@@ -9,32 +9,33 @@ const API_BACKEND_ORIGIN = (process.env.API_BACKEND_ORIGIN || process.env.BACKEN
 );
 
 const nextConfig: NextConfig = {
+  ...(process.env.NODE_ENV === 'production' ? { output: 'export' as const } : {}),
   reactStrictMode: true,
   poweredByHeader: false,
+  env: {
+    NEXT_PUBLIC_PUSHER_KEY: process.env.VITE_PUSHER_KEY || '',
+    NEXT_PUBLIC_PUSHER_CLUSTER: process.env.VITE_PUSHER_CLUSTER || '',
+  },
   turbopack: {
     root: clientRoot,
   },
 
-  async rewrites() {
-    if (process.env.NODE_ENV === 'production') {
-      return [];
-    }
-
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${API_BACKEND_ORIGIN}/api/:path*`,
-      },
-      {
-        source: '/socket.io/:path*',
-        destination: `${API_BACKEND_ORIGIN}/socket.io/:path*`,
-      },
-      {
-        source: '/auth/callback',
-        destination: `${API_BACKEND_ORIGIN}/auth/callback`,
-      },
-    ];
-  },
+  ...(process.env.NODE_ENV !== 'production'
+    ? {
+        async rewrites() {
+          return [
+            {
+              source: '/api/:path*',
+              destination: `${API_BACKEND_ORIGIN}/api/:path*`,
+            },
+            {
+              source: '/auth/callback',
+              destination: `${API_BACKEND_ORIGIN}/auth/callback`,
+            },
+          ];
+        },
+      }
+    : {}),
 };
 
 export default nextConfig;

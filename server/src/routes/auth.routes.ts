@@ -39,7 +39,7 @@ import {
 import { sendPasswordResetEmail, sendVerificationOtpEmail } from '../services/email.service.ts';
 import { recordAuditLog } from '../services/audit.service.ts';
 import { Errors } from '../utils/errors.ts';
-import { socketHub } from '../socket/hub.ts';
+import { realtimeHub } from '../realtime/hub.ts';
 
 const DUMMY_BCRYPT_HASH = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4oL8s6G7r2';
 const OTP_EXPIRY_MINUTES = 10;
@@ -644,7 +644,7 @@ authRouter.post(
         data: { revokedAt: new Date() },
       });
       clearAuthCookies(res);
-      await socketHub.disconnectUserSockets(userId, 'all_sessions_revoked');
+      await realtimeHub.notifyUserSessionRevoked(userId, 'all_sessions_revoked');
       res.json({ success: true, data: { loggedOutAll: true } });
     } catch (err) {
       next(err);
@@ -852,7 +852,7 @@ authRouter.post(
       });
 
       clearAuthCookies(res);
-      await socketHub.disconnectUserSockets(resetRecord.userId, 'password_reset');
+      await realtimeHub.notifyUserSessionRevoked(resetRecord.userId, 'password_reset');
 
       await recordAuditLog({
         actorId: resetRecord.userId,

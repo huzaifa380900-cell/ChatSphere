@@ -10,7 +10,7 @@ ChatSphere/
 │   ├── public/images/       Landing page images
 │   ├── src/
 │   │   ├── components/     Reusable UI
-│   │   ├── context/        Auth, navigation and Socket.IO state
+│   │   ├── context/        Auth, navigation and Pusher realtime state
 │   │   ├── lib/api.ts      API client, CSRF and media uploader
 │   │   ├── app/            Next.js routes
 │   │   ├── views/          Landing, auth, chat, profile, admin screens
@@ -21,7 +21,7 @@ ChatSphere/
 │   ├── next.config.ts
 │   ├── server.mjs          Unified production HTTP server entry point
 │   └── .env.example
-├── server/                  Express + Socket.IO + Prisma backend
+├── server/                  Express + Pusher + Prisma backend
 │   ├── prisma/
 │   │   ├── schema.prisma
 │   │   └── migrations/
@@ -32,7 +32,7 @@ ChatSphere/
 │   │   ├── middleware/      Security, auth and error handling
 │   │   ├── routes/          API endpoints
 │   │   ├── services/        Email, Cloudinary, audit and messaging
-│   │   ├── socket/          Socket.IO events
+│   │   ├── realtime/        Pusher event publishing
 │   │   └── index.ts         Backend entry point
 │   ├── tests/               Automated end-to-end tests
 │   ├── package.json
@@ -45,7 +45,7 @@ ChatSphere/
 └── package.json             Root shortcuts
 ```
 
-The Next.js frontend lives in `client`; Express, Socket.IO and Prisma live in `server`. The root-level Vite config is not the production frontend configuration.
+The Next.js frontend lives in `client`; Express, Pusher and Prisma live in `server`. The root-level Vite config is not the production frontend configuration.
 
 ## Requirements
 
@@ -97,7 +97,7 @@ Open `http://localhost:3000`.
 
 ## Frontend and backend
 
-For local development, the Next.js frontend runs on `http://localhost:3000`; Express and Socket.IO run on `http://localhost:4000`. In production, `npm start` runs Next.js, Express, and Socket.IO together in the same Node.js HTTP server. Express serves the existing API routes and Socket.IO endpoint, then passes frontend requests to Next.js.
+For local development, the Next.js frontend runs on `http://localhost:3000` and Express runs on `http://localhost:4000`. The browser uses relative `/api/*` URLs; the Next.js development server proxies API requests to Express. In production, Vercel serves the static Next.js export and runs Express as a serverless function at the same origin. Pusher Channels handles realtime messages, presence, and typing indicators; message mutations use the authenticated HTTP API.
 
 The old Vite SSR mode remains opt-in for local experiments only and is not used by the production start command.
 
@@ -105,7 +105,7 @@ The old Vite SSR mode remains opt-in for local experiments only and is not used 
 
 - Frontend: `http://localhost:3000`
 - Backend health check: `http://localhost:4000/api/health`
-- Next.js proxies `/api` and `/socket.io` to the backend during local development.
+- Next.js proxies `/api` to the backend during local development.
 
 A healthy response from `/api/health` should report `success: true` and database health `healthy`. The first backend start can take longer while its local database is initialized.
 
@@ -180,40 +180,35 @@ All feature endpoints require ChatSphere authentication and CSRF validation. Aud
 
 Never commit `server/.env`, `client/.env.local`, database files, passwords, API keys or signing secrets to GitHub.
 
-## Deploying to MonsterASP.NET
+## Deploying to Vercel
 
-The production app runs Next.js, Express, and Socket.IO in one Node.js process and one HTTP server at `https://chatsphere.runasp.net`. Express handles `/api/*` and Socket.IO handles `/socket.io`; all other requests are handled by Next.js. The server binds to the `PORT` supplied by MonsterASP.NET. No separate frontend host or API host is needed.
+The root `vercel.json` builds the Next.js client as a static export, publishes its output from `client/out`, and routes requests to the SPA or `api/[...route].ts` serverless Express function on the same origin. Pusher Channels provides realtime messaging, presence, and typing; a hosted PostgreSQL database is required because the local PGlite database is not supported in serverless functions.
 
-1. Push the repository to GitHub without committing `.env` files. In MonsterASP.NET, create a Node.js application for the repository root, select Node.js 22, and assign the application domain `chatsphere.runasp.net`.
-2. Set the build/deploy command to:
-
-   ```text
-   npm run install:all && npm run build
-   ```
-
-   Set the application start command to `npm start`. The root build creates the Next.js production build and compiles the backend, including Prisma Client generation. The production start script runs `prisma migrate deploy` before starting the unified HTTP server. Do not use `prisma db push` or manually apply migration SQL.
-3. Create a production PostgreSQL database. Configure `DATABASE_URL` as the application connection URL and `DIRECT_URL` as the direct PostgreSQL connection used by Prisma migrations. Keep both values private. Take a database backup before the first deployment; startup exits instead of serving traffic if a migration fails. If reusing a database from an older deployment, verify its `_prisma_migrations` history first: older versions could execute migration SQL directly without recording Prisma migration history. Reconcile/baseline that database only after reviewing its schema and taking a backup.
-4. Add these application environment variables in MonsterASP.NET. Generate three distinct random secrets of at least 32 characters:
+1. Import the GitHub repository into Vercel with the repository root as the project root. Vercel uses `npm run install:all` and `npm run build`.
+2. Set the required production settings in Vercel. Generate distinct signing secrets of at least 32 characters:
 
    ```env
    NODE_ENV=production
-   STRICT_PRODUCTION_ENV=true
-   DATABASE_URL=<PostgreSQL application connection URL>
-   DIRECT_URL=<PostgreSQL direct connection URL>
+   DATABASE_URL=<pooled PostgreSQL URL>
+   DIRECT_URL=<direct PostgreSQL URL>
    JWT_ACCESS_SECRET=<unique random secret, at least 32 characters>
    JWT_REFRESH_SECRET=<different unique random secret, at least 32 characters>
    CSRF_SECRET=<different unique random secret, at least 32 characters>
-   FRONTEND_PUBLIC_URL=https://chatsphere.runasp.net
-   CORS_ALLOWED_ORIGINS=https://chatsphere.runasp.net
+   FRONTEND_PUBLIC_URL=https://<your-vercel-domain>
    COOKIE_SECURE=true
    COOKIE_SAME_SITE=lax
+   PUSHER_APP_ID=<Pusher app id>
+   PUSHER_KEY=<Pusher key>
+   PUSHER_SECRET=<Pusher secret>
+   PUSHER_CLUSTER=<Pusher cluster>
+   VITE_PUSHER_KEY=<same public Pusher key>
+   VITE_PUSHER_CLUSTER=<same Pusher cluster>
    ```
 
-   MonsterASP.NET supplies `PORT`; do not set a fixed port. Leave `COOKIE_DOMAIN` unset because the frontend and API share one host. The site uses same-origin API and Socket.IO URLs in production, so `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SOCKET_URL`, and `API_BACKEND_ORIGIN` are not needed.
-5. To keep account verification/password reset and media uploads enabled, also configure `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Set `SMTP_PORT` if your mail provider does not use port 587; `SMTP_SECURE` and `SMTP_FROM` are optional. Production startup validates the SMTP and Cloudinary credentials. Google sign-in is optional and needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL=https://chatsphere.runasp.net/api/auth/google/callback`; register that exact callback URL with Google. Push notifications use the optional `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, and `VAPID_PRIVATE_KEY`. AI provider keys and related optional settings are listed in [AI features and provider setup](#ai-features-and-provider-setup). Keep all provider credentials in MonsterASP.NET's server-side environment settings, never in client variables or source control.
-6. Enable WebSocket connections for the Node application in the hosting control panel if that option is exposed. Start one application instance; Socket.IO presence and rooms use the current in-process adapter. After startup, check `https://chatsphere.runasp.net/api/health`, then test registration/email verification, login/logout, chat, Socket.IO reconnects, uploads, notifications, and admin permissions.
-
-Do not use the embedded PGlite database for live data. This guide prepares the project for deployment; you must configure the MonsterASP.NET application, PostgreSQL service, and any optional providers yourself.
+   Set `VITE_PUSHER_KEY` and `VITE_PUSHER_CLUSTER` for the Vercel build so Next.js exposes only the public key and cluster in browser code. Never expose `PUSHER_SECRET`, database credentials, or signing secrets as client variables.
+3. Configure `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` for email and media features. Google sign-in requires `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL=https://<your-vercel-domain>/api/auth/google/callback`; register that exact URL with Google. Add optional web-push and AI provider variables as needed. Keep secrets in Vercel's server-side environment settings.
+4. Ensure the hosted database supports connection pooling. The API caches its Prisma client for warm invocations and sets `connection_limit=1` on Vercel when the database URL does not already specify one. Apply committed Prisma migrations to the hosted database as a deployment step; serverless function invocations do not run migrations.
+5. After deployment, check `https://<your-vercel-domain>/api/health`, then test sign-in, chat, presence/typing, uploads, notifications, and admin permissions.
 
 ## Troubleshooting
 
@@ -221,7 +216,7 @@ Do not use the embedded PGlite database for live data. This guide prepares the p
 
 **Port already in use** — close the other development server first. Next.js frontend is `3000`, backend is `4000`.
 
-**Frontend loads but API fails** — keep the backend terminal open and open `http://localhost:4000/api/health`. If that is unhealthy, resolve the backend/database error before testing the UI.
+**Frontend loads but API fails locally** — keep the backend terminal open and open `http://localhost:4000/api/health`. If that is unhealthy, resolve the backend/database error before testing the UI.
 
 **OTP not arriving by email locally** — configure SMTP or check the development registration response for its sandbox OTP notice. Configure SMTP before going live.
 

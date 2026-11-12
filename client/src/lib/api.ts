@@ -1,13 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type { MessageAttachmentItem } from '../types/models.ts';
 
-// Production always uses the same-origin Express API. The override is for
-// local development when Next.js and Express run on separate ports.
-const API_BASE_URL = (
-  process.env.NODE_ENV === 'production'
-    ? '/api'
-    : process.env.NEXT_PUBLIC_API_URL || '/api'
-).replace(/\/+$/, '');
+const API_BASE_URL = '/api';
 
 let csrfTokenMemory: string | null = null;
 let csrfPromise: Promise<string> | null = null;

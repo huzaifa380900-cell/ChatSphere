@@ -198,6 +198,17 @@ export function loadAndValidateEnv() {
       if (trimmed) explicitOrigins.add(trimmed);
     }
   }
+  for (const deploymentUrl of [raw.VERCEL_URL, raw.VERCEL_PROJECT_PRODUCTION_URL]) {
+    if (!isRealValue(deploymentUrl)) continue;
+    const url = deploymentUrl.trim().startsWith('http')
+      ? deploymentUrl.trim()
+      : `https://${deploymentUrl.trim()}`;
+    try {
+      explicitOrigins.add(new URL(url).origin);
+    } catch {
+      // Ignore malformed platform-provided URLs.
+    }
+  }
 
   const hasExternalDatabaseUrl =
     isRealValue(raw.DATABASE_URL) &&
@@ -211,6 +222,11 @@ export function loadAndValidateEnv() {
 
   const hasGoogleOAuthConfig =
     isRealValue(raw.GOOGLE_CLIENT_ID) && isRealValue(raw.GOOGLE_CLIENT_SECRET);
+  const hasPusherConfig =
+    isRealValue(raw.PUSHER_APP_ID) &&
+    isRealValue(raw.PUSHER_KEY) &&
+    isRealValue(raw.PUSHER_SECRET) &&
+    isRealValue(raw.PUSHER_CLUSTER);
   const webPushSubject = isRealValue(raw.VAPID_SUBJECT) ? raw.VAPID_SUBJECT.trim() : '';
   const webPushPublicKey = isRealValue(raw.VAPID_PUBLIC_KEY) ? raw.VAPID_PUBLIC_KEY.trim() : '';
   const webPushPrivateKey = isRealValue(raw.VAPID_PRIVATE_KEY) ? raw.VAPID_PRIVATE_KEY.trim() : '';
@@ -259,6 +275,13 @@ export function loadAndValidateEnv() {
         isRealValue(raw.GOOGLE_CALLBACK_URL) && raw.GOOGLE_CALLBACK_URL.trim().startsWith('http')
           ? raw.GOOGLE_CALLBACK_URL.trim()
           : `${appUrl}/api/auth/google/callback`,
+    },
+    pusher: {
+      enabled: hasPusherConfig,
+      appId: hasPusherConfig ? raw.PUSHER_APP_ID!.trim() : '',
+      key: hasPusherConfig ? raw.PUSHER_KEY!.trim() : '',
+      secret: hasPusherConfig ? raw.PUSHER_SECRET!.trim() : '',
+      cluster: hasPusherConfig ? raw.PUSHER_CLUSTER!.trim() : '',
     },
     webPush: {
       enabled: hasWebPushConfig,

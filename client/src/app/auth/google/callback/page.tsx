@@ -1,16 +1,10 @@
-import { RouteSearchParamsProvider } from '../../../../context/RouterContext.tsx';
+import { RouteSearchParamsBoundary } from '../../../../components/RouteSearchParamsBoundary.tsx';
 import { GoogleCallbackPage } from '../../../../views/AuthPages.tsx';
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
-
+export default function Page() {
   return (
-    <RouteSearchParamsProvider searchParams={params}>
+    <RouteSearchParamsBoundary>
       <GoogleCallbackPage />
-    </RouteSearchParamsProvider>
+    </RouteSearchParamsBoundary>
   );
 }

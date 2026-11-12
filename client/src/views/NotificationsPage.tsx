@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, CheckCheck, MessageSquare, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useChatSocket } from '../context/ChatSocketContext.tsx';
+import { useChatRealtime } from '../context/RealtimeContext.tsx';
 import { useRouter } from '../context/RouterContext.tsx';
 import { apiClient, extractApiError } from '../lib/api.ts';
 import { DashboardShell } from '../components/DashboardShell.tsx';
@@ -20,7 +20,7 @@ function decodeVapidPublicKey(publicKey: string): ArrayBuffer {
 }
 
 export function NotificationsPage() {
-  const { notifications, unreadNotificationCount, refreshNotifications } = useChatSocket();
+  const { notifications, unreadNotificationCount, refreshNotifications } = useChatRealtime();
   const { navigate } = useRouter();
   const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('ALL');
   const [pushEnabled, setPushEnabled] = useState(false);

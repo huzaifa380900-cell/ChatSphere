@@ -3,7 +3,6 @@ import { env } from './config/env.ts';
 import { logger } from './config/logger.ts';
 import { initializeDatabase, shutdownDatabase } from './db/prisma.ts';
 import { createApiApp, createSsrApp } from './app.ts';
-import { createSocketServer } from './socket/index.ts';
 import { cleanupOrphanedUploads } from './services/cloudinary.service.ts';
 
 async function startStandaloneServer() {
@@ -17,7 +16,6 @@ async function startStandaloneServer() {
     logger.info('SSR mode enabled — React will be rendered on the server');
   }
   const httpServer = http.createServer(app);
-  const io = createSocketServer(httpServer);
 
   const orphanCleanupTimer = setInterval(() => {
     cleanupOrphanedUploads(60).catch((err) => {
@@ -38,7 +36,6 @@ async function startStandaloneServer() {
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}; initiating graceful shutdown`);
     clearInterval(orphanCleanupTimer);
-    io.close();
     httpServer.close(async () => {
       await shutdownDatabase();
       process.exit(0);

@@ -21,7 +21,7 @@ import {
   sendMessagePersistent,
 } from '../services/message.service.ts';
 import { sendPushNotification } from '../services/push.service.ts';
-import { socketHub } from '../socket/hub.ts';
+import { realtimeHub } from '../realtime/hub.ts';
 import { Errors } from '../utils/errors.ts';
 
 export const conversationsRouter = Router();
@@ -241,12 +241,9 @@ conversationsRouter.post(
         conv = existing;
       }
 
-      await socketHub.joinConversationRoom(userId, conv.id);
-      await socketHub.joinConversationRoom(targetUserId, conv.id);
-
       const forCreator = await hydrateConversationForUser(conv.id, userId);
       const forPeer = await hydrateConversationForUser(conv.id, targetUserId);
-      socketHub.emitToUser(targetUserId, 'conversation:created', { conversation: forPeer });
+      realtimeHub.emitToUser(targetUserId, 'conversation:created', { conversation: forPeer });
 
       res.status(201).json({
         success: true,
@@ -329,15 +326,14 @@ conversationsRouter.post(
       });
 
       for (const notification of notifications) {
-        socketHub.emitToUser(notification.userId, 'notification:new', { notification });
+        realtimeHub.emitToUser(notification.userId, 'notification:new', { notification });
         void sendPushNotification(notification.userId, notification);
       }
 
       const allParticipantIds = [creatorId, ...uniqueOtherIds];
       for (const uid of allParticipantIds) {
-        await socketHub.joinConversationRoom(uid, conv.id);
         const view = await hydrateConversationForUser(conv.id, uid);
-        socketHub.emitToUser(uid, 'conversation:created', { conversation: view });
+        realtimeHub.emitToUser(uid, 'conversation:created', { conversation: view });
       }
 
       const hydrated = await hydrateConversationForUser(conv.id, creatorId);
@@ -388,7 +384,7 @@ conversationsRouter.patch(
       });
 
       const hydrated = await hydrateConversationForUser(conversationId, req.authUser!.id);
-      socketHub.emitToConversation(conversationId, 'conversation:updated', {
+      realtimeHub.emitToConversation(conversationId, 'conversation:updated', {
         conversationId,
         groupMetadata: hydrated.groupMetadata,
       });
@@ -435,13 +431,12 @@ conversationsRouter.post(
       });
 
       for (const u of validUsers) {
-        await socketHub.joinConversationRoom(u.id, conversationId);
         const view = await hydrateConversationForUser(conversationId, u.id);
-        socketHub.emitToUser(u.id, 'conversation:created', { conversation: view });
+        realtimeHub.emitToUser(u.id, 'conversation:created', { conversation: view });
       }
 
       const hydrated = await hydrateConversationForUser(conversationId, req.authUser!.id);
-      socketHub.emitToConversation(conversationId, 'conversation:members_changed', {
+      realtimeHub.emitToConversation(conversationId, 'conversation:members_changed', {
         conversationId,
         members: hydrated.members,
       });
@@ -492,9 +487,8 @@ conversationsRouter.delete(
         data: { leftAt: new Date() },
       });
 
-      await socketHub.leaveConversationRoom(targetUserId, conversationId);
-      socketHub.emitToUser(targetUserId, 'conversation:removed', { conversationId });
-      socketHub.emitToConversation(conversationId, 'conversation:member_left', {
+      realtimeHub.emitToUser(targetUserId, 'conversation:removed', { conversationId });
+      realtimeHub.emitToConversation(conversationId, 'conversation:member_left', {
         conversationId,
         userId: targetUserId,
       });

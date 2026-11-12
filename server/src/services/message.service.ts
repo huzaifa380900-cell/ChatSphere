@@ -6,7 +6,7 @@ import {
   destroyCloudinaryAsset,
 } from './cloudinary.service.ts';
 import { Errors } from '../utils/errors.ts';
-import { socketHub } from '../socket/hub.ts';
+import { realtimeHub } from '../realtime/hub.ts';
 import { sendPushNotification } from './push.service.ts';
 
 export const messageInclude = {
@@ -319,12 +319,12 @@ export async function sendMessagePersistent(params: {
 
   const formatted = formatHydratedMessage(createdMsg);
 
-  socketHub.emitToConversation(params.conversationId, 'message:new', {
+  realtimeHub.emitToConversation(params.conversationId, 'message:new', {
     message: formatted,
   });
 
   for (const m of activeMembers) {
-    socketHub.emitToUser(m.userId, 'conversation:activity', {
+    realtimeHub.emitToUser(m.userId, 'conversation:activity', {
       conversationId: params.conversationId,
       lastMessage: formatted,
       lastMessageAt: now.toISOString(),
@@ -333,7 +333,7 @@ export async function sendMessagePersistent(params: {
   }
 
   for (const notif of notificationsToEmit) {
-    socketHub.emitToUser(notif.userId, 'notification:new', { notification: notif });
+    realtimeHub.emitToUser(notif.userId, 'notification:new', { notification: notif });
     void sendPushNotification(notif.userId, notif);
   }
 
@@ -379,7 +379,7 @@ export async function editMessagePersistent(params: {
   });
 
   const formatted = formatHydratedMessage(updated);
-  socketHub.emitToConversation(params.conversationId, 'message:edited', {
+  realtimeHub.emitToConversation(params.conversationId, 'message:edited', {
     message: formatted,
   });
 
@@ -455,7 +455,7 @@ export async function deleteMessagePersistent(params: {
   });
 
   const formatted = formatHydratedMessage(updated);
-  socketHub.emitToConversation(params.conversationId, 'message:deleted', {
+  realtimeHub.emitToConversation(params.conversationId, 'message:deleted', {
     conversationId: params.conversationId,
     messageId: existing.id,
     deletedAt: now.toISOString(),
@@ -518,7 +518,7 @@ export async function markConversationReadPersistent(userId: string, conversatio
   });
 
   if (emitReceipts && pendingReceipts.length > 0) {
-    socketHub.emitToConversation(conversationId, 'message:receipts_updated', {
+    realtimeHub.emitToConversation(conversationId, 'message:receipts_updated', {
       conversationId,
       userId,
       status: 'READ',
@@ -568,7 +568,7 @@ export async function markUndeliveredMessagesDelivered(userId: string) {
   }
 
   for (const [conversationId, messageIds] of byConv.entries()) {
-    socketHub.emitToConversation(conversationId, 'message:receipts_updated', {
+    realtimeHub.emitToConversation(conversationId, 'message:receipts_updated', {
       conversationId,
       userId,
       status: 'DELIVERED',

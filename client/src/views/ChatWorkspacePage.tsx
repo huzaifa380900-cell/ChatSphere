@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.tsx';
-import { useChatSocket } from '../context/ChatSocketContext.tsx';
+import { useChatRealtime } from '../context/RealtimeContext.tsx';
 import { useRouter, useRouterSearchParams } from '../context/RouterContext.tsx';
 import { apiClient, extractApiError, uploadMediaToCloudinary } from '../lib/api.ts';
 import { DashboardShell } from '../components/DashboardShell.tsx';
@@ -98,7 +98,7 @@ export function ChatWorkspacePage({
     deleteMessage,
     markConversationRead,
     emitTyping,
-  } = useChatSocket();
+  } = useChatRealtime();
 
   const [sidebarFilter, setSidebarFilter] = useState<'ALL' | 'DIRECT' | 'GROUP' | 'UNREAD'>(
     forcedMode

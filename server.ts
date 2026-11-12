@@ -6,7 +6,6 @@ import { env } from './chatsphere/server/src/config/env.ts';
 import { logger } from './chatsphere/server/src/config/logger.ts';
 import { initializeDatabase, shutdownDatabase } from './chatsphere/server/src/db/prisma.ts';
 import { createApiApp } from './chatsphere/server/src/app.ts';
-import { createSocketServer } from './chatsphere/server/src/socket/index.ts';
 import { cleanupOrphanedUploads } from './chatsphere/server/src/services/cloudinary.service.ts';
 
 async function startFullStackServer() {
@@ -39,7 +38,6 @@ async function startFullStackServer() {
   });
 
   const httpServer = http.createServer(app);
-  const io = createSocketServer(httpServer);
 
   const orphanCleanupTimer = setInterval(() => {
     cleanupOrphanedUploads(60).catch((err) => {
@@ -61,7 +59,6 @@ async function startFullStackServer() {
   const gracefulShutdown = async (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully`);
     clearInterval(orphanCleanupTimer);
-    io.close();
     if (vite) {
       await vite.close();
     }

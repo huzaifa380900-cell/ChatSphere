@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.tsx';
-import { useChatSocket } from '../context/ChatSocketContext.tsx';
+import { useChatRealtime } from '../context/RealtimeContext.tsx';
 import { AppLink, useRouter } from '../context/RouterContext.tsx';
 import { Avatar } from './Avatar.tsx';
 
@@ -35,7 +35,7 @@ export function DashboardShell({
   fullBleed = false,
 }: DashboardShellProps) {
   const { user, theme, setThemePreference, logout } = useAuth();
-  const { connected, reconnecting, conversations, unreadNotificationCount } = useChatSocket();
+  const { connected, reconnecting, conversations, unreadNotificationCount } = useChatRealtime();
   const { pathname, navigate } = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

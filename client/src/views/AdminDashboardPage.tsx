@@ -649,8 +649,8 @@ export function AdminDashboardPage() {
               </button>
             </div>
             <p className="text-xs text-base-content/70">
-              Suspending an account immediately revokes all active refresh sessions and disconnects
-              live Socket.IO connections.
+              Suspending an account immediately revokes all active refresh sessions and sends a
+              realtime sign-out event to connected clients.
             </p>
             <textarea
               rows={3}

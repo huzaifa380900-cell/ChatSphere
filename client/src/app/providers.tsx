@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../context/AuthContext.tsx';
-import { ChatSocketProvider } from '../context/ChatSocketContext.tsx';
+import { ChatRealtimeProvider } from '../context/RealtimeContext.tsx';
 import { NextRouterProvider } from '../context/RouterContext.tsx';
 
 /**
@@ -30,7 +30,7 @@ function ServiceWorkerRegistrar() {
  * Client provider boundary.
  *
  * AuthProvider owns the session (it reads /auth/me with httpOnly cookies) and
- * ChatSocketProvider owns the Socket.IO connection. Both are inherently
+ * ChatRealtimeProvider owns the Pusher connection. Both are inherently
  * client-side, so they are mounted here once for the whole app instead of in
  * every route.
  */
@@ -38,7 +38,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <NextRouterProvider>
       <AuthProvider>
-        <ChatSocketProvider>
+        <ChatRealtimeProvider>
           {children}
           <Toaster
             position="top-right"
@@ -52,7 +52,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             }}
           />
           <ServiceWorkerRegistrar />
-        </ChatSocketProvider>
+        </ChatRealtimeProvider>
       </AuthProvider>
     </NextRouterProvider>
   );

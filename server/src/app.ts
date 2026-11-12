@@ -12,6 +12,7 @@ import { uploadsRouter } from './routes/uploads.routes.ts';
 import { notificationsRouter } from './routes/notifications.routes.ts';
 import { adminRouter } from './routes/admin.routes.ts';
 import { aiRouter } from './routes/ai.routes.ts';
+import { realtimeRouter } from './routes/realtime.routes.ts';
 
 export function createApiApp(
   registerFrontend?: (app: Express) => void,
@@ -81,6 +82,7 @@ export function createApiApp(
   app.use('/api/notifications', notificationsRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/ai', aiRouter);
+  app.use('/api/realtime', realtimeRouter);
 
   // Support top-level /auth/callback OAuth redirect alias
   app.get(['/auth/callback', '/auth/callback/'], handleGoogleOAuthCallback);

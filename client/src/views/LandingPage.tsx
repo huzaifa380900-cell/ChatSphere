@@ -198,7 +198,7 @@ function HeroGraphic() {
         ✅ 0 localStorage tokens
       </FloatingBubble>
       <FloatingBubble delay={1.7} duration={5} x={310} y={340} variant="sent">
-        ⚡ Socket.IO realtime
+        ⚡ Pusher realtime
       </FloatingBubble>
       <FloatingBubble delay={1.2} duration={6.8} x={-4} y={320} variant="received">
         📦 PostgreSQL persisted
@@ -435,7 +435,7 @@ function FeaturesHeader() {
     <motion.div ref={ref} variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} className="max-w-2xl">
       <p className="text-xs font-semibold text-cyan-400 uppercase tracking-widest mb-3">What's inside</p>
       <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Complete messaging &amp; administration stack</h2>
-      <p className="text-slate-400 mt-4 leading-relaxed">Every workflow runs against real database transactions, authenticated WebSocket events, and server-authorized cloud storage.</p>
+      <p className="text-slate-400 mt-4 leading-relaxed">Every workflow runs against real database transactions, authenticated Pusher events, and server-authorized cloud storage.</p>
     </motion.div>
   );
 }
@@ -461,7 +461,7 @@ function SecuritySection({ user, navigate }: { user: ReturnType<typeof useAuth>[
         <div className="space-y-8">
           <motion.div variants={fadeUp} custom={0}>
             <p className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-3">Zero-trust architecture</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight">Authorization verified on every request and socket event</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight">Authorization verified on every request and realtime event</h2>
           </motion.div>
           <motion.p variants={fadeUp} custom={1} className="text-slate-400 leading-relaxed">
             ChatSphere never trusts user IDs, roles, or ownership flags from the client. Conversation membership is verified in PostgreSQL before loading history, sending messages, or renewing private media URLs.
@@ -817,7 +817,7 @@ export function LandingPage() {
       {/* ── Stats Strip ─────────────────────────────────────────────────────── */}
       <section className="py-14 border-y border-white/5 bg-white/1">
         <div className="max-w-5xl mx-auto px-5 sm:px-8 grid grid-cols-2 lg:grid-cols-4 gap-8">
-          <StatBadge value="100%" label="PostgreSQL persisted before socket ACK" />
+          <StatBadge value="100%" label="PostgreSQL persisted before message acknowledgment" />
           <StatBadge value="12×" label="Bcrypt rounds + hashed 6-digit OTP" />
           <StatBadge value="300s" label="Signed Cloudinary URL TTL per member" />
           <StatBadge value="0 B" label="Credentials or tokens in localStorage" />

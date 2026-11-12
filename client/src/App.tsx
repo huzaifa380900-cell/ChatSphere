@@ -2,7 +2,7 @@ import React from 'react';
 import { Toaster } from 'react-hot-toast';
 import { RouterProvider, useRouter } from './context/RouterContext.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
-import { ChatSocketProvider } from './context/ChatSocketContext.tsx';
+import { ChatRealtimeProvider } from './context/RealtimeContext.tsx';
 import { GuestOnlyView, ProtectedView } from './components/RouteGuards.tsx';
 import { LandingPage } from './views/LandingPage.tsx';
 import {
@@ -93,7 +93,7 @@ export default function App({ initialUrl }: { initialUrl?: string } = {}) {
     <AppErrorBoundary>
       <RouterProvider initialUrl={initialUrl}>
         <AuthProvider>
-          <ChatSocketProvider>
+          <ChatRealtimeProvider>
             <RouteSwitch />
             <Toaster
               position="top-right"
@@ -106,7 +106,7 @@ export default function App({ initialUrl }: { initialUrl?: string } = {}) {
                 },
               }}
             />
-          </ChatSocketProvider>
+          </ChatRealtimeProvider>
         </AuthProvider>
       </RouterProvider>
     </AppErrorBoundary>
