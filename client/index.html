@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-theme="chatsphere">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatSphere</title>
+    <meta name="theme-color" content="#0B1120" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="ChatSphere" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/chatsphere-192.png" />
+    <meta name="description" content="Production-grade real-time messaging platform featuring direct and group chats, secure authentication, encrypted cloud media attachments, presence tracking, and role-based administration." />
+    <meta property="og:title" content="ChatSphere" />
+    <meta property="og:description" content="Production-grade real-time messaging platform featuring direct and group chats, secure authentication, encrypted cloud media attachments, presence tracking, and role-based administration." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-[#0B1120] text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-100">
+    <div id="root"><!--ssr-outlet--></div>
+    <script type="module" src="/src/entry-client.tsx"></script>
+  </body>
+</html>

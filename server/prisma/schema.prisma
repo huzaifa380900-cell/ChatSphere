@@ -1,0 +1,446 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccountStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MessageType {
+  TEXT
+  MEDIA
+  VOICE
+  SYSTEM
+}
+
+enum AttachmentKind {
+  IMAGE
+  VIDEO
+  AUDIO
+  VOICE
+  DOCUMENT
+  AVATAR
+}
+
+enum AccessPolicy {
+  AUTHENTICATED_CONVERSATION
+  PRIVATE_OWNER
+  PUBLIC_AVATAR
+}
+
+enum UploadStatus {
+  STAGED
+  ATTACHED
+  DELETED
+  ORPHANED
+}
+
+enum ReceiptStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum NotificationType {
+  NEW_MESSAGE
+  MENTION
+  GROUP_INVITE
+  ROLE_CHANGED
+  SYSTEM_SECURITY
+  MODERATION
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  MALWARE
+  IMPERSONATION
+  ILLEGAL_CONTENT
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  username        String        @unique
+  displayName     String
+  passwordHash    String?
+  avatarUrl       String?
+  avatarPublicId  String?
+  bio             String        @default("")
+  role            Role          @default(USER)
+  status          AccountStatus @default(PENDING_VERIFICATION)
+  suspendedReason String?
+  suspendedAt     DateTime?
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  oauthAccounts         OAuthAccount[]
+  refreshSessions       RefreshSession[]
+  verificationOtps      EmailVerificationOTP[]
+  passwordResetTokens   PasswordResetToken[]
+  settings              UserSettings?
+  presence              UserPresence?
+  createdConversations  Conversation[]         @relation("ConversationCreator")
+  memberships           ConversationMember[]
+  sentMessages          Message[]              @relation("MessageSender")
+  deletedMessages       Message[]              @relation("MessageDeleter")
+  attachments           MessageAttachment[]
+  receipts              MessageReceipt[]
+  notifications         Notification[]         @relation("NotificationRecipient")
+  pushSubscriptions     PushSubscription[]
+  triggeredNotifs       Notification[]         @relation("NotificationActor")
+  submittedReports      AbuseReport[]          @relation("ReportSubmitter")
+  reportsAgainst        AbuseReport[]          @relation("ReportedUser")
+  reviewedReports       AbuseReport[]          @relation("ReportReviewer")
+  auditLogsAsActor      AuditLog[]             @relation("AuditActor")
+  auditLogsAsTarget     AuditLog[]             @relation("AuditTarget")
+
+  @@index([role, status])
+  @@index([createdAt])
+}
+
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  providerEmail     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model RefreshSession {
+  id                  String    @id @default(cuid())
+  userId              String
+  tokenHash           String    @unique
+  userAgent           String?
+  ipAddress           String?
+  deviceLabel         String?
+  expiresAt           DateTime
+  revokedAt           DateTime?
+  replacedByTokenHash String?
+  createdAt           DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model EmailVerificationOTP {
+  id                String    @id @default(cuid())
+  userId            String
+  email             String
+  otpHash           String
+  attempts          Int       @default(0)
+  maxAttempts       Int       @default(5)
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  resendAvailableAt DateTime
+  createdAt         DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([email, expiresAt])
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model UserSettings {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  theme                   String   @default("dark")
+  emailNotifications      Boolean  @default(true)
+  desktopNotifications    Boolean  @default(true)
+  soundEnabled            Boolean  @default(true)
+  readReceiptsEnabled     Boolean  @default(true)
+  typingIndicatorsEnabled Boolean  @default(true)
+  onlineStatusVisible     Boolean  @default(true)
+  updatedAt               DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserPresence {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  isOnline          Boolean  @default(false)
+  lastSeenAt        DateTime @default(now())
+  customStatus      String?
+  activeSocketCount Int      @default(0)
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([isOnline, lastSeenAt])
+}
+
+model Conversation {
+  id            String           @id @default(cuid())
+  type          ConversationType
+  directKey     String?          @unique
+  createdById   String
+  lastMessageAt DateTime         @default(now())
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  createdBy     User                 @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  groupMetadata GroupMetadata?
+  members       ConversationMember[]
+  messages      Message[]
+  attachments   MessageAttachment[]
+  notifications Notification[]
+  abuseReports  AbuseReport[]
+
+  @@index([lastMessageAt(sort: Desc)])
+  @@index([type])
+}
+
+model GroupMetadata {
+  id                    String   @id @default(cuid())
+  conversationId        String   @unique
+  name                  String
+  description           String   @default("")
+  avatarUrl             String?
+  avatarPublicId        String?
+  onlyAdminsCanPost     Boolean  @default(false)
+  onlyAdminsCanEditInfo Boolean  @default(true)
+  maxMembers            Int      @default(250)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model ConversationMember {
+  id                String     @id @default(cuid())
+  conversationId    String
+  userId            String
+  role              MemberRole @default(MEMBER)
+  isPinned          Boolean    @default(false)
+  pinnedAt          DateTime?
+  isMuted           Boolean    @default(false)
+  mutedUntil        DateTime?
+  lastReadMessageId String?
+  lastReadAt        DateTime?
+  unreadCount       Int        @default(0)
+  joinedAt          DateTime   @default(now())
+  leftAt            DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId, leftAt, isPinned])
+  @@index([conversationId, leftAt])
+}
+
+model Message {
+  id              String      @id @default(cuid())
+  clientMessageId String
+  conversationId  String
+  senderId        String
+  replyToId       String?
+  content         String      @default("")
+  type            MessageType @default(TEXT)
+  isEdited        Boolean     @default(false)
+  editedAt        DateTime?
+  isDeleted       Boolean     @default(false)
+  deletedAt       DateTime?
+  deletedById     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  conversation  Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender        User                @relation("MessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+  deletedBy     User?               @relation("MessageDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
+  replyTo       Message?            @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies       Message[]           @relation("MessageReplies")
+  attachments   MessageAttachment[]
+  receipts      MessageReceipt[]
+  notifications Notification[]
+  abuseReports  AbuseReport[]
+
+  @@unique([senderId, clientMessageId])
+  @@index([conversationId, createdAt(sort: Desc), id])
+  @@index([senderId])
+}
+
+model MessageAttachment {
+  id                 String         @id @default(cuid())
+  messageId          String?
+  ownerId            String
+  conversationId     String?
+  cloudinaryPublicId String         @unique
+  resourceType       String
+  attachmentKind     AttachmentKind
+  mimeType           String
+  originalFilename   String
+  fileExtension      String
+  fileSize           Int
+  accessPolicy       AccessPolicy   @default(AUTHENTICATED_CONVERSATION)
+  width              Int?
+  height             Int?
+  durationSeconds    Float?
+  thumbnailPublicId  String?
+  status             UploadStatus   @default(STAGED)
+  uploadedAt         DateTime       @default(now())
+  deletedAt          DateTime?
+
+  message      Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, status])
+  @@index([ownerId, status])
+  @@index([status, uploadedAt])
+}
+
+model MessageReceipt {
+  id          String        @id @default(cuid())
+  messageId   String
+  userId      String
+  status      ReceiptStatus @default(SENT)
+  deliveredAt DateTime?
+  readAt      DateTime?
+  updatedAt   DateTime      @updatedAt
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId, status])
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  userId         String
+  actorId        String?
+  conversationId String?
+  messageId      String?
+  type           NotificationType
+  title          String
+  body           String
+  isRead         Boolean          @default(false)
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+
+  user         User          @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor        User?         @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      Message?      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+}
+
+model PushSubscription {
+  id             String    @id @default(cuid())
+  userId         String
+  endpoint       String    @unique
+  p256dh         String
+  auth           String
+  expirationTime DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AbuseReport {
+  id              String       @id @default(cuid())
+  reporterId      String
+  targetUserId    String?
+  conversationId  String?
+  messageId       String?
+  reason          ReportReason
+  details         String
+  status          ReportStatus @default(OPEN)
+  reviewedById    String?
+  resolutionNotes String?
+  reviewedAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  reporter     User          @relation("ReportSubmitter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUser   User?         @relation("ReportedUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  reviewedBy   User?         @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  message      Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([targetUserId])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  targetUserId String?
+  action       String
+  entityType   String
+  entityId     String?
+  metadata     Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  actor      User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetUser User? @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([action, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+}

@@ -1,0 +1,250 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* ─── ChatSphere Dark Theme ────────────────────────────────────────────────── */
+@plugin "daisyui/theme" {
+  name: "chatsphere";
+  default: true;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-base-100: #080E1A;
+  --color-base-200: #0D1526;
+  --color-base-300: #152035;
+  --color-base-content: #E8F0FE;
+  --color-primary: #06B6D4;
+  --color-primary-content: #001B22;
+  --color-secondary: #818CF8;
+  --color-secondary-content: #0C0F3A;
+  --color-accent: #34D399;
+  --color-accent-content: #022C22;
+  --color-neutral: #1E293B;
+  --color-neutral-content: #CBD5E1;
+  --color-info: #38BDF8;
+  --color-success: #34D399;
+  --color-warning: #FBBF24;
+  --color-error: #F87171;
+  --radius-selector: 0.75rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+}
+
+/* ─── ChatSphere Light Theme ────────────────────────────────────────────────── */
+@plugin "daisyui/theme" {
+  name: "chatsphere-light";
+  default: false;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: #F0F4FF;
+  --color-base-200: #FFFFFF;
+  --color-base-300: #E2E8F0;
+  --color-base-content: #0F172A;
+  --color-primary: #0891B2;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #6366F1;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #10B981;
+  --color-accent-content: #FFFFFF;
+  --color-neutral: #E2E8F0;
+  --color-neutral-content: #0F172A;
+  --color-info: #0284C7;
+  --color-success: #10B981;
+  --color-warning: #D97706;
+  --color-error: #EF4444;
+  --radius-selector: 0.75rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+}
+
+/* ─── Font Stack ─────────────────────────────────────────────────────────────── */
+@theme {
+  --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* ─── Base Styles ────────────────────────────────────────────────────────────── */
+@layer base {
+  html, body {
+    font-family: var(--font-sans);
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+
+  /* Scrollbar — dark theme */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.35); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,0.6); }
+}
+
+/* ─── Utility Classes ────────────────────────────────────────────────────────── */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #06B6D4 0%, #818CF8 50%, #34D399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Neon glow effects */
+.glow-cyan  { box-shadow: 0 0 24px rgba(6,182,212,0.25),  0 0 48px rgba(6,182,212,0.08); }
+.glow-indigo{ box-shadow: 0 0 24px rgba(129,140,248,0.25), 0 0 48px rgba(129,140,248,0.08); }
+.glow-green { box-shadow: 0 0 24px rgba(52,211,153,0.25),  0 0 48px rgba(52,211,153,0.08); }
+
+/* Glassmorphism card */
+.glass-card {
+  background: rgba(13, 21, 38, 0.65);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.glass-card-light {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+/* Animated gradient background */
+.animated-bg {
+  background: linear-gradient(-45deg, #080E1A, #0D1526, #0a1628, #060d1a);
+  background-size: 400% 400%;
+  animation: gradientShift 12s ease infinite;
+}
+
+/* Noise texture overlay */
+.noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+/* Animated border gradient */
+.border-gradient {
+  position: relative;
+  border-radius: 1rem;
+}
+.border-gradient::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(6,182,212,0.4), rgba(129,140,248,0.4), rgba(52,211,153,0.3));
+  z-index: -1;
+  animation: rotateBorder 6s linear infinite;
+}
+
+/* Input focus glow */
+.input-glow:focus-within {
+  box-shadow: 0 0 0 1px rgba(6,182,212,0.6), 0 0 16px rgba(6,182,212,0.15);
+}
+
+/* Typing indicator dots */
+.typing-dot {
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Online pulse */
+.online-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgba(52, 211, 153, 0.4);
+  animation: onlinePulse 2s ease-out infinite;
+}
+
+/* Message bubble entry */
+.msg-enter {
+  animation: msgSlideUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ─── Keyframes ───────────────────────────────────────────────────────────────── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes rotateBorder {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 300% 300%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-12px) rotate(1.5deg); }
+  66%       { transform: translateY(-6px) rotate(-1deg); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  40%       { transform: translateY(-16px) rotate(-2deg); }
+  70%       { transform: translateY(-8px) rotate(1.5deg); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%            { transform: translateY(-6px); opacity: 1; }
+}
+
+@keyframes onlinePulse {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  70%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes msgSlideUp {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes spinOnce {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Shimmer skeleton */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* ─── Reduced Motion ─────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
