@@ -1,18 +1,41 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "installCommand": "npm run install:all",
-  "buildCommand": "npm run build",
-  "outputDirectory": "client/out",
-  "functions": {
-    "api/[...route].ts": {
-      "maxDuration": 60
+  "services": {
+    "client": {
+      "root": "client",
+      "framework": "nextjs"
+    },
+    "chatsphere-api": {
+      "root": "server",
+      "framework": "express",
+      "entrypoint": "src/vercel-handler.ts",
+      "buildCommand": "npm install --include=dev && npm run build"
     }
   },
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "chatsphere-api"
+      }
+    },
+    {
+      "source": "/auth/callback",
+      "destination": {
+        "service": "chatsphere-api"
+      }
+    },
+    {
+      "source": "/auth/callback/",
+      "destination": {
+        "service": "chatsphere-api"
+      }
+    },
+    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": {
+        "service": "client"
+      }
     }
   ]
 }
