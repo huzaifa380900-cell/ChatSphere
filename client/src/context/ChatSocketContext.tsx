@@ -257,7 +257,10 @@ export function ChatSocketProvider({ children }: { children: React.ReactNode }) 
     // Socket.IO connects directly to the backend origin (WebSocket upgrades are
     // not proxied through the Next.js rewrite), falling back to the current
     // origin when the backend is served from the same host.
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
+    const socketUrl =
+      process.env.NODE_ENV === 'production'
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
     const socket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],

@@ -88,24 +88,28 @@ export function loadAndValidateEnv() {
     ['development', 'test', 'production'] as const,
     'development'
   );
-  const strictProd = raw.STRICT_PRODUCTION_ENV === 'true';
+  const strictProd = nodeEnv === 'production' || raw.STRICT_PRODUCTION_ENV === 'true';
 
   if (strictProd) {
-    const requiredInStrictProd: Array<[string, string | undefined]> = [
-      ['DATABASE_URL', raw.DATABASE_URL],
-      ['DIRECT_URL', raw.DIRECT_URL],
-      ['JWT_ACCESS_SECRET', raw.JWT_ACCESS_SECRET],
-      ['JWT_REFRESH_SECRET', raw.JWT_REFRESH_SECRET],
-      ['CSRF_SECRET', raw.CSRF_SECRET],
-      ['CLOUDINARY_CLOUD_NAME', raw.CLOUDINARY_CLOUD_NAME],
-      ['CLOUDINARY_API_KEY', raw.CLOUDINARY_API_KEY],
-      ['CLOUDINARY_API_SECRET', raw.CLOUDINARY_API_SECRET],
-      ['SMTP_HOST', raw.SMTP_HOST],
-      ['SMTP_USER', raw.SMTP_USER],
-      ['SMTP_PASS', raw.SMTP_PASS],
+    const isPostgresUrl = (value: string | undefined) =>
+      isRealValue(value) && /^postgres(?:ql)?:\/\//i.test(value.trim());
+    const isSigningSecret = (value: string | undefined) =>
+      isRealValue(value) && value.trim().length >= 32;
+    const requiredInStrictProd: Array<[string, boolean]> = [
+      ['DATABASE_URL', isPostgresUrl(raw.DATABASE_URL)],
+      ['DIRECT_URL', isPostgresUrl(raw.DIRECT_URL)],
+      ['JWT_ACCESS_SECRET', isSigningSecret(raw.JWT_ACCESS_SECRET)],
+      ['JWT_REFRESH_SECRET', isSigningSecret(raw.JWT_REFRESH_SECRET)],
+      ['CSRF_SECRET', isSigningSecret(raw.CSRF_SECRET)],
+      ['CLOUDINARY_CLOUD_NAME', isRealValue(raw.CLOUDINARY_CLOUD_NAME)],
+      ['CLOUDINARY_API_KEY', isRealValue(raw.CLOUDINARY_API_KEY)],
+      ['CLOUDINARY_API_SECRET', isRealValue(raw.CLOUDINARY_API_SECRET)],
+      ['SMTP_HOST', isRealValue(raw.SMTP_HOST)],
+      ['SMTP_USER', isRealValue(raw.SMTP_USER)],
+      ['SMTP_PASS', isRealValue(raw.SMTP_PASS) || isRealValue(raw.SMTP_PASSWORD)],
     ];
     const missing = requiredInStrictProd
-      .filter(([, value]) => !isRealValue(value))
+      .filter(([, configured]) => !configured)
       .map(([name]) => name);
 
     if (missing.length > 0) {

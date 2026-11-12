@@ -73,72 +73,6 @@ async function applySqlMigrationsToPglite(pg: PGlite) {
   }
 }
 
-async function ensureExternalPostgresSchema(connectionString: string) {
-  const { Client } = await import('pg');
-  const cleanConnString = connectionString.replace(/[?&]connection_limit=\d+/g, '');
-  const client = new Client({ connectionString: cleanConnString });
-  await client.connect();
-  try {
-    const tableCheck = await client.query<{ exists: boolean }>(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables
-        WHERE table_schema = 'public' AND table_name = 'User'
-      ) AS "exists";
-    `);
-    if (tableCheck.rows[0]?.exists) {
-      const pushTableCheck = await client.query<{ exists: boolean }>(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables
-          WHERE table_schema = 'public' AND table_name = 'PushSubscription'
-        ) AS "exists";
-      `);
-      if (!pushTableCheck.rows[0]?.exists) {
-        const migrationsRoot = [
-          path.resolve(process.cwd(), 'chatsphere/server/prisma/migrations'),
-          path.resolve(process.cwd(), 'prisma/migrations'),
-        ].find((candidate) => fs.existsSync(candidate));
-        const pushMigrationPath = migrationsRoot
-          ? path.join(migrationsRoot, '20261028000000_add_push_subscriptions', 'migration.sql')
-          : null;
-        if (!pushMigrationPath || !fs.existsSync(pushMigrationPath)) {
-          throw new Error('PushSubscription table is missing and its Prisma migration could not be found.');
-        }
-
-        await client.query(fs.readFileSync(pushMigrationPath, 'utf-8'));
-        logger.info('Applied PostgreSQL Prisma migration to existing database', {
-          migration: path.basename(path.dirname(pushMigrationPath)),
-        });
-      }
-      return;
-    }
-
-    const migrationsDirCandidates = [
-      path.resolve(process.cwd(), 'chatsphere/server/prisma/migrations'),
-      path.resolve(process.cwd(), 'prisma/migrations'),
-    ];
-    const migrationsRoot = migrationsDirCandidates.find((p) => fs.existsSync(p));
-    if (!migrationsRoot) return;
-
-    const entries = fs
-      .readdirSync(migrationsRoot, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name)
-      .sort();
-
-    for (const folderName of entries) {
-      const sqlPath = path.join(migrationsRoot, folderName, 'migration.sql');
-      if (!fs.existsSync(sqlPath)) continue;
-      const sqlContent = fs.readFileSync(sqlPath, 'utf-8');
-      await client.query(sqlContent);
-      logger.info('Bootstrapped Prisma SQL migration on external PostgreSQL database', {
-        migration: folderName,
-      });
-    }
-  } finally {
-    await client.end().catch(() => undefined);
-  }
-}
-
 export async function initializeDatabase(customDataDir?: string): Promise<PrismaClient> {
   if (prismaInstance) return prismaInstance;
   if (initPromise) return initPromise;
@@ -148,8 +82,6 @@ export async function initializeDatabase(customDataDir?: string): Promise<Prisma
       activeDatabaseMode = 'neon-postgresql';
       process.env.DATABASE_URL = env.databaseUrl;
       process.env.DIRECT_URL = env.directUrl ?? env.databaseUrl;
-
-      await ensureExternalPostgresSchema(env.directUrl ?? env.databaseUrl!);
 
       prismaInstance = new PrismaClient({
         datasources: { db: { url: env.databaseUrl } },

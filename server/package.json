@@ -10,7 +10,7 @@
     "dev": "tsx src/index.ts",
     "dev:ssr": "node --import tsx --input-type=module -e \"process.env.SSR_MODE='true'; await import('./src/index.ts')\"",
     "build": "prisma generate && tsc -p tsconfig.json",
-    "start": "node dist/src/index.js",
+    "start": "node --input-type=module -e \"await import('./dist/src/config/env.js')\" && npm run prisma:migrate:deploy && node ../client/server.mjs",
     "lint": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",

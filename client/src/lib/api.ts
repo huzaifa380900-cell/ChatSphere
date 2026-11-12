@@ -1,11 +1,13 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type { MessageAttachmentItem } from '../types/models.ts';
 
-// Relative by default so requests stay same-origin and the Next.js rewrite
-// proxies them to the Express backend (no CORS preflight, httpOnly cookies
-// flow through untouched). Override with NEXT_PUBLIC_API_URL for split
-// frontend/backend deployments.
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || '/api').replace(/\/+$/, '');
+// Production always uses the same-origin Express API. The override is for
+// local development when Next.js and Express run on separate ports.
+const API_BASE_URL = (
+  process.env.NODE_ENV === 'production'
+    ? '/api'
+    : process.env.NEXT_PUBLIC_API_URL || '/api'
+).replace(/\/+$/, '');
 
 let csrfTokenMemory: string | null = null;
 let csrfPromise: Promise<string> | null = null;

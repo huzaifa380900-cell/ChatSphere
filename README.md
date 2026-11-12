@@ -19,6 +19,7 @@ ChatSphere/
 │   │   └── main.tsx
 │   ├── package.json
 │   ├── next.config.ts
+│   ├── server.mjs          Unified production HTTP server entry point
 │   └── .env.example
 ├── server/                  Express + Socket.IO + Prisma backend
 │   ├── prisma/
@@ -96,9 +97,9 @@ Open `http://localhost:3000`.
 
 ## Frontend and backend
 
-The Next.js frontend runs on `http://localhost:3000`; Express and Socket.IO run on `http://localhost:4000`. In production, deploy these as separate services: Next.js serves the website, while Express serves the API and Socket.IO. Express does not try to load a Vite SSR bundle in production.
+For local development, the Next.js frontend runs on `http://localhost:3000`; Express and Socket.IO run on `http://localhost:4000`. In production, `npm start` runs Next.js, Express, and Socket.IO together in the same Node.js HTTP server. Express serves the existing API routes and Socket.IO endpoint, then passes frontend requests to Next.js.
 
-The old Vite SSR mode remains opt-in for local experiments only. It is not part of the recommended production deployment.
+The old Vite SSR mode remains opt-in for local experiments only and is not used by the production start command.
 
 ## Local URLs
 
@@ -118,7 +119,7 @@ npm run lint
 npm run build
 ```
 
-`npm test` runs the backend integration suite. `npm run build` checks the frontend TypeScript/build and compiles the backend into `server/dist/src/index.js`. The current `lint` scripts run TypeScript checks; this repository does not include an ESLint configuration. To run only one check:
+`npm test` runs the backend integration suite. `npm run build` checks/builds the frontend and compiles the backend into `server/dist/src/` for the unified production server. The current `lint` scripts run TypeScript checks; this repository does not include an ESLint configuration. To run only one check:
 
 ```powershell
 npm run lint --prefix client
@@ -127,7 +128,7 @@ npm run build --prefix client
 npm run build --prefix server
 ```
 
-The backend `build` script explicitly emits JavaScript. This fixes the old backend setting where TypeScript had `noEmit: true` even though the production start command expected `dist/src/index.js`.
+The backend `build` script generates Prisma Client and emits JavaScript. The production start script applies committed PostgreSQL migrations with `prisma migrate deploy` before starting `client/server.mjs`.
 
 ## Optional providers
 
@@ -179,33 +180,44 @@ All feature endpoints require ChatSphere authentication and CSRF validation. Aud
 
 Never commit `server/.env`, `client/.env.local`, database files, passwords, API keys or signing secrets to GitHub.
 
-## Deploying after local testing
+## Deploying to MonsterASP.NET
 
-### Recommended low-cost deployment: Vercel + Render + Neon
+The production app runs Next.js, Express, and Socket.IO in one Node.js process and one HTTP server at `https://chatsphere.runasp.net`. Express handles `/api/*` and Socket.IO handles `/socket.io`; all other requests are handled by Next.js. The server binds to the `PORT` supplied by MonsterASP.NET. No separate frontend host or API host is needed.
 
-This app uses httpOnly cookies for authentication and a persistent Socket.IO connection. The simplest reliable layout is one Next.js site, one always-running Express service, and one managed PostgreSQL database. Free service quotas and sleep/usage limits can change; check each provider's current plan before launch. A custom domain under your control is recommended for reliable cross-subdomain cookies and may have a separate registration cost.
+1. Push the repository to GitHub without committing `.env` files. In MonsterASP.NET, create a Node.js application for the repository root, select Node.js 22, and assign the application domain `chatsphere.runasp.net`.
+2. Set the build/deploy command to:
 
-1. Push the project root to GitHub. Do not commit any `.env` file.
-2. Create a PostgreSQL database on Neon. Copy its pooled connection string to the backend's `DATABASE_URL`, and its direct connection string to `DIRECT_URL`. Keep both private.
-3. On Render, create a Blueprint from the same GitHub repository and use the root-level `render.yaml`. It defines a Node 22 web service rooted at `server`, builds the Prisma client and backend, runs migrations before startup, and checks `/api/health`. Add the Neon pooled URL as `DATABASE_URL`, the direct URL as `DIRECT_URL`, and set `FRONTEND_PUBLIC_URL` and `CORS_ALLOWED_ORIGINS` to your exact frontend origin. Render generates the three signing secrets. Add any optional provider credentials (Google, SMTP, Cloudinary, AI) in Render's backend environment settings only. Render supplies `PORT`.
-4. On Vercel, import the same repository and set the **Root Directory** to `client`. Select Next.js (normally autodetected) and use `npm run build`. Add these environment variables, replacing the example host with your backend URL:
-
-   ```env
-   NEXT_PUBLIC_API_URL=https://YOUR_API_HOST/api
-   NEXT_PUBLIC_SOCKET_URL=https://YOUR_API_HOST
-   API_BACKEND_ORIGIN=https://YOUR_API_HOST
+   ```text
+   npm run install:all && npm run build
    ```
 
-   The `NEXT_PUBLIC_*` values are public, not secrets. `API_BACKEND_ORIGIN` is used by Next.js rewrites, including the OAuth callback alias. Redeploy after changing any of these values.
-5. For reliable authentication cookies, use custom subdomains under the **same parent domain**, for example `app.example.com` and `api.example.com`. Configure Render with `FRONTEND_PUBLIC_URL=https://app.example.com`, `CORS_ALLOWED_ORIGINS=https://app.example.com`, `COOKIE_DOMAIN=.example.com`, `COOKIE_SECURE=true`, and `COOKIE_SAME_SITE=lax`. Point all three Vercel URLs above at `https://api.example.com`. Add any separate admin frontend origin to `CORS_ALLOWED_ORIGINS` too. For a no-custom-domain trial, use the exact Vercel URL in `FRONTEND_PUBLIC_URL` and `CORS_ALLOWED_ORIGINS`, keep `COOKIE_SECURE=true`, `COOKIE_SAME_SITE=none`, and leave `COOKIE_DOMAIN` unset. This cross-site cookie setup may fail in browsers that block third-party cookies, so test registration/login before sharing the site.
-6. If using Google sign-in, set `GOOGLE_CALLBACK_URL` to `https://YOUR_API_HOST/api/auth/google/callback` and register that exact callback URL with Google. Configure SMTP for verification/reset emails and Cloudinary for media; without them those features are unavailable. Keep paid AI usage disabled unless you intentionally accept provider charges.
-7. After deployment, open `https://YOUR_API_HOST/api/health` and confirm the database is healthy. Then test registration, verification, login/logout, chat and Socket.IO, uploads, and admin permissions. Admin pages may be deployed separately later, but backend `ADMIN` role checks must remain enabled.
+   Set the application start command to `npm start`. The root build creates the Next.js production build and compiles the backend, including Prisma Client generation. The production start script runs `prisma migrate deploy` before starting the unified HTTP server. Do not use `prisma db push` or manually apply migration SQL.
+3. Create a production PostgreSQL database. Configure `DATABASE_URL` as the application connection URL and `DIRECT_URL` as the direct PostgreSQL connection used by Prisma migrations. Keep both values private. Take a database backup before the first deployment; startup exits instead of serving traffic if a migration fails. If reusing a database from an older deployment, verify its `_prisma_migrations` history first: older versions could execute migration SQL directly without recording Prisma migration history. Reconcile/baseline that database only after reviewing its schema and taking a backup.
+4. Add these application environment variables in MonsterASP.NET. Generate three distinct random secrets of at least 32 characters:
 
-Do not use the local embedded PostgreSQL database for live data. Hosting accounts, provider credentials, and custom-domain setup must be configured by you; never put backend secrets in Vercel's frontend environment.
+   ```env
+   NODE_ENV=production
+   STRICT_PRODUCTION_ENV=true
+   DATABASE_URL=<PostgreSQL application connection URL>
+   DIRECT_URL=<PostgreSQL direct connection URL>
+   JWT_ACCESS_SECRET=<unique random secret, at least 32 characters>
+   JWT_REFRESH_SECRET=<different unique random secret, at least 32 characters>
+   CSRF_SECRET=<different unique random secret, at least 32 characters>
+   FRONTEND_PUBLIC_URL=https://chatsphere.runasp.net
+   CORS_ALLOWED_ORIGINS=https://chatsphere.runasp.net
+   COOKIE_SECURE=true
+   COOKIE_SAME_SITE=lax
+   ```
+
+   MonsterASP.NET supplies `PORT`; do not set a fixed port. Leave `COOKIE_DOMAIN` unset because the frontend and API share one host. The site uses same-origin API and Socket.IO URLs in production, so `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SOCKET_URL`, and `API_BACKEND_ORIGIN` are not needed.
+5. To keep account verification/password reset and media uploads enabled, also configure `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Set `SMTP_PORT` if your mail provider does not use port 587; `SMTP_SECURE` and `SMTP_FROM` are optional. Production startup validates the SMTP and Cloudinary credentials. Google sign-in is optional and needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL=https://chatsphere.runasp.net/api/auth/google/callback`; register that exact callback URL with Google. Push notifications use the optional `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, and `VAPID_PRIVATE_KEY`. AI provider keys and related optional settings are listed in [AI features and provider setup](#ai-features-and-provider-setup). Keep all provider credentials in MonsterASP.NET's server-side environment settings, never in client variables or source control.
+6. Enable WebSocket connections for the Node application in the hosting control panel if that option is exposed. Start one application instance; Socket.IO presence and rooms use the current in-process adapter. After startup, check `https://chatsphere.runasp.net/api/health`, then test registration/email verification, login/logout, chat, Socket.IO reconnects, uploads, notifications, and admin permissions.
+
+Do not use the embedded PGlite database for live data. This guide prepares the project for deployment; you must configure the MonsterASP.NET application, PostgreSQL service, and any optional providers yourself.
 
 ## Troubleshooting
 
-**`express` / other package not found** — run `INSTALL.bat` or `npm run install:all` from the project root. Do not run `node server.ts`; that old combined entry point has been removed. Use `RUN-SERVER.bat` or `npm run server`.
+**`express` / other package not found** — run `INSTALL.bat` or `npm run install:all` from the project root. For local development, use `RUN-SERVER.bat` or `npm run server`; production starts with `npm start` after the build.
 
 **Port already in use** — close the other development server first. Next.js frontend is `3000`, backend is `4000`.
 

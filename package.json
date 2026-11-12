@@ -2,13 +2,17 @@
   "name": "chatsphere",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
-    "install:all": "npm install --prefix client && npm install --prefix server",
+    "install:all": "npm install --include=dev --prefix client && npm install --include=dev --prefix server",
     "client": "npm run dev --prefix client",
     "server": "npm run dev --prefix server",
     "test": "npm test --prefix server",
     "lint": "npm run lint --prefix client && npm run lint --prefix server",
     "build": "npm run build --prefix client && npm run build --prefix server",
+    "start": "npm start --prefix server",
     "dev": "npm run dev --prefix server",
     "dev:ssr": "npm run dev --prefix server"
   }
