@@ -5,7 +5,7 @@ import { loadAndValidateEnv } from '../src/config/env.ts';
 interface VercelConfig {
   services?: unknown;
   outputDirectory?: string;
-  functions?: Record<string, { maxDuration?: number }>;
+  functions?: Record<string, { includeFiles?: string; maxDuration?: number }>;
   rewrites?: Array<{ source: string; destination: string }>;
 }
 
@@ -64,11 +64,19 @@ describe('production deployment configuration', () => {
     const packageConfig = JSON.parse(
       readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
     ) as PackageConfig;
+    const apiHandler = readFileSync(
+      new URL('../../api/handler.ts', import.meta.url),
+      'utf8'
+    );
 
     expect(packageConfig.type).toBe('module');
     expect(config.services).toBeUndefined();
     expect(config.outputDirectory).toBe('client/out');
+    expect(config.functions?.['api/handler.ts']?.includeFiles).toBe('server/dist/**');
     expect(config.functions?.['api/handler.ts']?.maxDuration).toBe(60);
+    expect(apiHandler).toContain(
+      "import { vercelHandler } from '../server/dist/src/vercel-handler.js';"
+    );
     expect(config.rewrites).toContainEqual({
       source: '/api/:path*',
       destination: '/api/handler?__path=:path*',

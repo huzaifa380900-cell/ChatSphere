@@ -6,6 +6,7 @@
   "outputDirectory": "client/out",
   "functions": {
     "api/handler.ts": {
+      "includeFiles": "server/dist/**",
       "maxDuration": 60
     }
   },

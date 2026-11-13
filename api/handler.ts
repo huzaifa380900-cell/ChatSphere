@@ -1,7 +1,8 @@
-import { vercelHandler } from '../server/src/vercel-handler.ts';
+import { vercelHandler } from '../server/dist/src/vercel-handler.js';
+import type { vercelHandler as sourceVercelHandler } from '../server/src/vercel-handler.ts';
 
-type ApiRequest = Parameters<typeof vercelHandler>[0];
-type ApiResponse = Parameters<typeof vercelHandler>[1];
+type ApiRequest = Parameters<typeof sourceVercelHandler>[0];
+type ApiResponse = Parameters<typeof sourceVercelHandler>[1];
 
 export default function handler(req: ApiRequest, res: ApiResponse): void {
   const routePath = req.query.__path;
