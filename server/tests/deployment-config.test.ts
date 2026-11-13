@@ -1,5 +1,17 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { loadAndValidateEnv } from '../src/config/env.ts';
+
+interface VercelConfig {
+  services?: unknown;
+  outputDirectory?: string;
+  functions?: Record<string, { maxDuration?: number }>;
+  rewrites?: Array<{ source: string; destination: string }>;
+}
+
+interface PackageConfig {
+  type?: string;
+}
 
 const requiredProductionKeys = [
   'NODE_ENV',
@@ -45,6 +57,24 @@ function withProductionEnvironment(values: Record<string, string>, run: () => vo
 }
 
 describe('production deployment configuration', () => {
+  it('routes API requests through the root serverless function', () => {
+    const config = JSON.parse(
+      readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8')
+    ) as VercelConfig;
+    const packageConfig = JSON.parse(
+      readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
+    ) as PackageConfig;
+
+    expect(packageConfig.type).toBe('module');
+    expect(config.services).toBeUndefined();
+    expect(config.outputDirectory).toBe('client/out');
+    expect(config.functions?.['api/[...route].ts']?.maxDuration).toBe(60);
+    expect(config.rewrites).toContainEqual({
+      source: '/(.*)',
+      destination: '/index.html',
+    });
+  });
+
   it('rejects missing PostgreSQL URLs and signing secrets in production', () => {
     withProductionEnvironment({ NODE_ENV: 'production' }, () => {
       expect(() => loadAndValidateEnv()).toThrow(
