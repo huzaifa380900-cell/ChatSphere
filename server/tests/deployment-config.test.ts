@@ -70,7 +70,7 @@ describe('production deployment configuration', () => {
     expect(config.outputDirectory).toBe('client/out');
     expect(config.functions?.['api/[...route].ts']?.maxDuration).toBe(60);
     expect(config.rewrites).toContainEqual({
-      source: '/(.*)',
+      source: '/:path((?!api/).*)',
       destination: '/index.html',
     });
   });
