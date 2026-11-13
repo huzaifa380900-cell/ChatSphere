@@ -182,7 +182,7 @@ Never commit `server/.env`, `client/.env.local`, database files, passwords, API 
 
 ## Deploying to Vercel
 
-The root `vercel.json` builds the Next.js client as a static export, publishes its output from `client/out`, and routes non-API paths to the SPA while keeping `/api/*` requests on the `api/[...route].ts` serverless Express function. Pusher Channels provides realtime messaging, presence, and typing; a hosted PostgreSQL database is required because the local PGlite database is not supported in serverless functions.
+The root `vercel.json` builds the Next.js client as a static export, publishes its output from `client/out`, routes `/api/*` requests through the `api/handler.ts` serverless Express function, and sends non-API paths to the SPA. Pusher Channels provides realtime messaging, presence, and typing; a hosted PostgreSQL database is required because the local PGlite database is not supported in serverless functions.
 
 1. Import the GitHub repository into Vercel with the repository root as the project root. Vercel uses `npm run install:all` and `npm run build`.
 2. Set the required production settings in Vercel. Generate distinct signing secrets of at least 32 characters:

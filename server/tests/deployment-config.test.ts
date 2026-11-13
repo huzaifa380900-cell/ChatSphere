@@ -68,7 +68,11 @@ describe('production deployment configuration', () => {
     expect(packageConfig.type).toBe('module');
     expect(config.services).toBeUndefined();
     expect(config.outputDirectory).toBe('client/out');
-    expect(config.functions?.['api/[...route].ts']?.maxDuration).toBe(60);
+    expect(config.functions?.['api/handler.ts']?.maxDuration).toBe(60);
+    expect(config.rewrites).toContainEqual({
+      source: '/api/:path*',
+      destination: '/api/handler?__path=:path*',
+    });
     expect(config.rewrites).toContainEqual({
       source: '/:path((?!api/).*)',
       destination: '/index.html',

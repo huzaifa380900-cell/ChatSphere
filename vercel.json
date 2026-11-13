@@ -5,11 +5,15 @@
   "buildCommand": "npm run build",
   "outputDirectory": "client/out",
   "functions": {
-    "api/[...route].ts": {
+    "api/handler.ts": {
       "maxDuration": 60
     }
   },
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/handler?__path=:path*"
+    },
     {
       "source": "/:path((?!api/).*)",
       "destination": "/index.html"
