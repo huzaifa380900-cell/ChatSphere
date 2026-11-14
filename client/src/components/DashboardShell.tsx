@@ -3,13 +3,17 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
   LogOut,
+  Menu,
   MessageSquare,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   ShieldCheck,
   Sun,
   Users,
   WifiOff,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -35,6 +39,8 @@ export function DashboardShell({
   const { user, theme, setThemePreference, logout } = useAuth();
   const { connected, reconnecting, conversations, unreadNotificationCount } = useChatRealtime();
   const { pathname, navigate } = useRouter();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(false);
 
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
@@ -144,25 +150,40 @@ export function DashboardShell({
     <div className="relative min-h-screen h-dvh flex bg-base-100 text-base-content overflow-hidden">
 
       {/* ── Workspace Sidebar ───────────────────────────────────────────── */}
-      <aside className="flex w-16 lg:w-60 shrink-0 flex-col bg-base-200 border-r border-white/5">
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+          aria-label="Close navigation menu"
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col bg-base-200 border-r border-white/5 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 ${
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${desktopSidebarCollapsed ? 'lg:w-16' : 'lg:w-60'}`}
+      >
         {/* Logo row */}
-        <div className="h-16 px-2 lg:px-5 flex items-center justify-center lg:justify-between border-b border-white/5">
+        <div className={`h-16 px-2 flex items-center border-b border-white/5 ${
+          desktopSidebarCollapsed ? 'lg:justify-center' : 'lg:justify-between lg:px-5'
+        } justify-between`}>
           <AppLink
             href={user?.role === 'ADMIN' ? '/admin' : '/chat'}
-            className="flex items-center justify-center lg:justify-start gap-2.5"
+            onClick={() => setMobileSidebarOpen(false)}
+            className="flex items-center gap-2.5"
             aria-label="ChatSphere home"
             title="ChatSphere"
           >
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <MessageSquare className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="hidden lg:inline text-sm font-bold text-base-content">ChatSphere</span>
+            <span className={`${desktopSidebarCollapsed ? 'lg:hidden' : ''} text-sm font-bold text-base-content`}>ChatSphere</span>
           </AppLink>
 
           {/* Connection indicator */}
           <motion.div
             animate={{ opacity: 1 }}
-            className="hidden lg:flex items-center gap-1.5"
+            className={`${desktopSidebarCollapsed ? 'lg:hidden' : 'hidden lg:flex'} items-center gap-1.5`}
             title={connected ? 'Real-time connected' : 'Reconnecting…'}
           >
             <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`}>
@@ -172,27 +193,38 @@ export function DashboardShell({
             </div>
             <span className="text-[10px] text-base-content/50 font-mono">{connected ? 'Live' : 'Sync…'}</span>
           </motion.div>
+          <button
+            type="button"
+            onClick={() => setMobileSidebarOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-base-content/60 hover:bg-white/5 hover:text-base-content lg:hidden"
+            aria-label="Close navigation menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 p-1.5 lg:p-2.5 space-y-0.5 overflow-y-auto" aria-label="Workspace navigation">
+        <nav className={`flex-1 p-2.5 space-y-0.5 overflow-y-auto ${
+          desktopSidebarCollapsed ? 'lg:p-1.5' : ''
+        }`} aria-label="Workspace navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <AppLink
                 key={item.href}
                 href={item.href}
+                onClick={() => setMobileSidebarOpen(false)}
                 aria-label={item.label}
                 title={item.label}
-                className={`relative flex items-center justify-center lg:justify-between gap-3 px-2 lg:px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                className={`relative flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   item.active
                     ? 'bg-primary/15 text-primary shadow-sm'
                     : 'text-base-content/60 hover:bg-white/5 hover:text-base-content'
-                }`}
+                } ${desktopSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
               >
-                <span className="flex items-center justify-center lg:justify-start gap-3 min-w-0">
-                  <Icon className={`w-5 h-5 lg:w-4 lg:h-4 shrink-0 ${item.active ? 'text-primary' : ''}`} />
-                  <span className="hidden lg:block truncate">{item.label}</span>
+                <span className={`flex items-center gap-3 min-w-0 ${desktopSidebarCollapsed ? 'lg:justify-center' : ''}`}>
+                  <Icon className={`w-4 h-4 shrink-0 ${item.active ? 'text-primary' : ''}`} />
+                  <span className={`${desktopSidebarCollapsed ? 'lg:hidden' : ''} truncate`}>{item.label}</span>
                 </span>
                 <AnimatePresence>
                   {item.count > 0 && (
@@ -200,7 +232,9 @@ export function DashboardShell({
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
-                      className="absolute right-0 top-0 lg:static min-w-[18px] lg:min-w-[20px] h-[18px] lg:h-5 px-1.5 rounded-full bg-primary text-primary-content text-[9px] lg:text-[10px] font-bold flex items-center justify-center tabular-nums"
+                      className={`absolute right-0 top-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-primary text-primary-content text-[9px] font-bold flex items-center justify-center tabular-nums ${
+                        desktopSidebarCollapsed ? 'lg:hidden' : 'lg:static lg:min-w-[20px] lg:h-5 lg:text-[10px]'
+                      }`}
                     >
                       {item.count > 99 ? '99+' : item.count}
                     </motion.span>
@@ -212,8 +246,8 @@ export function DashboardShell({
         </nav>
 
         {/* User footer */}
-        <div className="p-1.5 lg:p-3 border-t border-white/5 space-y-2">
-          <div className="flex items-center justify-center lg:justify-start gap-2.5 px-0 lg:px-2 py-1.5">
+        <div className={`p-3 border-t border-white/5 space-y-2 ${desktopSidebarCollapsed ? 'lg:p-1.5' : ''}`}>
+          <div className={`flex items-center gap-2.5 px-2 py-1.5 ${desktopSidebarCollapsed ? 'lg:justify-center lg:px-0' : ''}`}>
             <Avatar
               src={user?.avatarUrl}
               name={user?.displayName || 'User'}
@@ -221,32 +255,32 @@ export function DashboardShell({
               showPresence
               isOnline={connected}
             />
-            <div className="hidden lg:block min-w-0 flex-1">
+            <div className={`${desktopSidebarCollapsed ? 'lg:hidden' : ''} min-w-0 flex-1`}>
               <p className="text-xs font-semibold text-base-content truncate">{user?.displayName}</p>
               <p className="text-[10px] text-base-content/50 truncate font-mono">@{user?.username}</p>
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-stretch gap-1.5">
+          <div className={`flex items-stretch gap-1.5 ${desktopSidebarCollapsed ? 'lg:flex-col' : 'flex-col lg:flex-row'}`}>
             <button
               type="button"
               onClick={() => void setThemePreference(theme === 'dark' ? 'light' : 'dark')}
-              className="flex-1 flex items-center justify-center gap-1.5 h-9 lg:h-8 rounded-lg text-xs text-base-content/60 hover:text-base-content hover:bg-white/5 transition-all duration-200 cursor-pointer"
+              className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs text-base-content/60 hover:text-base-content hover:bg-white/5 transition-all duration-200 cursor-pointer"
               aria-label="Toggle color theme"
               title="Toggle color theme"
             >
               {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-              <span className="hidden lg:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+              <span className={desktopSidebarCollapsed ? 'lg:hidden' : ''}>{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </button>
             <button
               type="button"
               onClick={() => void handleSignOut()}
-              className="flex-1 flex items-center justify-center gap-1.5 h-9 lg:h-8 rounded-lg text-xs text-error/80 hover:text-error hover:bg-error/8 transition-all duration-200 cursor-pointer"
+              className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs text-error/80 hover:text-error hover:bg-error/8 transition-all duration-200 cursor-pointer"
               aria-label="Sign out of ChatSphere"
               title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Sign Out</span>
+              <span className={desktopSidebarCollapsed ? 'lg:hidden' : ''}>Sign Out</span>
             </button>
           </div>
         </div>
@@ -273,6 +307,24 @@ export function DashboardShell({
         {/* Top header */}
         <header className="h-14 lg:h-16 px-4 lg:px-6 border-b border-white/5 bg-base-200/50 backdrop-blur-sm flex items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) {
+                  setDesktopSidebarCollapsed((collapsed) => !collapsed);
+                } else {
+                  setMobileSidebarOpen((open) => !open);
+                }
+              }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base-content/60 hover:bg-white/5 hover:text-base-content"
+              aria-label="Toggle sidebar"
+              title="Toggle sidebar"
+            >
+              <Menu className="h-5 w-5 lg:hidden" />
+              {desktopSidebarCollapsed
+                ? <PanelLeftOpen className="hidden h-5 w-5 lg:block" />
+                : <PanelLeftClose className="hidden h-5 w-5 lg:block" />}
+            </button>
             <div className="min-w-0">
               <h1 className="text-sm font-semibold text-base-content truncate">{title}</h1>
               {subtitle && (
