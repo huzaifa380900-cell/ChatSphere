@@ -12,15 +12,23 @@ import { useRouter } from '../context/RouterContext.tsx';
  * identical to the original — only the location changed.
  */
 
-export function ProtectedView({ children }: { children: React.ReactNode }) {
+export function ProtectedView({
+  children,
+  redirectAdminTo,
+}: {
+  children: React.ReactNode;
+  redirectAdminTo?: string;
+}) {
   const { user, loading } = useAuth();
   const { navigate } = useRouter();
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/login', { replace: true });
+    } else if (!loading && user?.role === 'ADMIN' && redirectAdminTo) {
+      navigate(redirectAdminTo, { replace: true });
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, redirectAdminTo]);
 
   if (loading) {
     return (
@@ -33,7 +41,7 @@ export function ProtectedView({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  if (!user || (user.role === 'ADMIN' && redirectAdminTo)) return null;
   return <>{children}</>;
 }
 
@@ -43,7 +51,7 @@ export function GuestOnlyView({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/chat', { replace: true });
+      navigate(user.role === 'ADMIN' ? '/admin' : '/chat', { replace: true });
     }
   }, [loading, user, navigate]);
 

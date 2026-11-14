@@ -21,6 +21,10 @@ const loginFormSchema = z.object({
 });
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
+function getDashboardPath(user: AuthUser): '/admin' | '/chat' {
+  return user.role === 'ADMIN' ? '/admin' : '/chat';
+}
+
 const registerFormSchema = z.object({
   displayName: z.string().trim().min(2, 'Display name must be at least 2 characters.').max(60),
   username: z
@@ -265,7 +269,7 @@ export function LoginPage() {
       }>('/auth/login', values);
       setAuthenticatedUser(res.data.data.user);
       toast.success('Welcome back to ChatSphere.');
-      navigate('/chat');
+      navigate(getDashboardPath(res.data.data.user));
     } catch (err) {
       const parsed = extractApiError(err);
       if (parsed.code === 'EMAIL_UNVERIFIED') {
@@ -502,7 +506,7 @@ export function VerifyEmailPage() {
       pendingDevVerificationHint = null;
       setAuthenticatedUser(res.data.data.user);
       toast.success('Email verified! Your ChatSphere account is now active.');
-      navigate('/chat');
+      navigate(getDashboardPath(res.data.data.user));
     } catch (err) {
       const parsed = extractApiError(err);
       if (parsed.code === 'ALREADY_VERIFIED') {
@@ -858,7 +862,7 @@ export function GoogleCallbackPage() {
       void refreshUser().then((u) => {
         if (u) {
           toast.success(`Signed in as ${u.displayName}`);
-          navigate('/chat', { replace: true });
+          navigate(getDashboardPath(u), { replace: true });
         } else {
           navigate('/login', { replace: true });
         }

@@ -44,21 +44,21 @@ function RouteSwitch() {
 
   if (pathname === '/chat') {
     return (
-      <ProtectedView>
+      <ProtectedView redirectAdminTo="/admin">
         <ChatWorkspacePage forcedMode="ALL" />
       </ProtectedView>
     );
   }
   if (pathname === '/chat/direct') {
     return (
-      <ProtectedView>
+      <ProtectedView redirectAdminTo="/admin">
         <ChatWorkspacePage forcedMode="DIRECT" />
       </ProtectedView>
     );
   }
   if (pathname === '/chat/groups') {
     return (
-      <ProtectedView>
+      <ProtectedView redirectAdminTo="/admin">
         <ChatWorkspacePage forcedMode="GROUP" />
       </ProtectedView>
     );

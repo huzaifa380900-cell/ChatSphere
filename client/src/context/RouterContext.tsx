@@ -86,12 +86,16 @@ export function AppLink({
   children,
   onClick,
   suppressHydrationWarning,
+  title,
+  'aria-label': ariaLabel,
 }: {
   href: string;
   className?: string;
   children: React.ReactNode;
   onClick?: () => void;
   suppressHydrationWarning?: boolean;
+  title?: string;
+  'aria-label'?: string;
 }) {
   return (
     <Link
@@ -99,6 +103,8 @@ export function AppLink({
       className={className}
       onClick={onClick}
       suppressHydrationWarning={suppressHydrationWarning}
+      title={title}
+      aria-label={ariaLabel}
     >
       {children}
     </Link>

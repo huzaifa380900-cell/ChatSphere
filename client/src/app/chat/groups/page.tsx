@@ -5,7 +5,7 @@ import { ChatWorkspacePage } from '../../../views/ChatWorkspacePage.tsx';
 export default function Page() {
   return (
     <RouteSearchParamsBoundary>
-      <ProtectedView>
+      <ProtectedView redirectAdminTo="/admin">
         <ChatWorkspacePage forcedMode="GROUP" />
       </ProtectedView>
     </RouteSearchParamsBoundary>

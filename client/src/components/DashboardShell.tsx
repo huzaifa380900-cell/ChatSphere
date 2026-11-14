@@ -141,23 +141,28 @@ export function DashboardShell({
   };
 
   return (
-    <div className="min-h-screen h-screen flex bg-base-100 text-base-content overflow-hidden">
+    <div className="relative min-h-screen h-dvh flex bg-base-100 text-base-content overflow-hidden">
 
-      {/* ── Desktop Sidebar ──────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex lg:w-60 shrink-0 flex-col bg-base-200 border-r border-white/5">
+      {/* ── Workspace Sidebar ───────────────────────────────────────────── */}
+      <aside className="flex w-16 lg:w-60 shrink-0 flex-col bg-base-200 border-r border-white/5">
         {/* Logo row */}
-        <div className="h-16 px-5 flex items-center justify-between border-b border-white/5">
-          <AppLink href="/chat" className="flex items-center gap-2.5">
+        <div className="h-16 px-2 lg:px-5 flex items-center justify-center lg:justify-between border-b border-white/5">
+          <AppLink
+            href={user?.role === 'ADMIN' ? '/admin' : '/chat'}
+            className="flex items-center justify-center lg:justify-start gap-2.5"
+            aria-label="ChatSphere home"
+            title="ChatSphere"
+          >
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <MessageSquare className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="text-sm font-bold text-base-content">ChatSphere</span>
+            <span className="hidden lg:inline text-sm font-bold text-base-content">ChatSphere</span>
           </AppLink>
 
           {/* Connection indicator */}
           <motion.div
             animate={{ opacity: 1 }}
-            className="flex items-center gap-1.5"
+            className="hidden lg:flex items-center gap-1.5"
             title={connected ? 'Real-time connected' : 'Reconnecting…'}
           >
             <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`}>
@@ -170,22 +175,24 @@ export function DashboardShell({
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 p-2.5 space-y-0.5 overflow-y-auto" aria-label="Workspace navigation">
+        <nav className="flex-1 p-1.5 lg:p-2.5 space-y-0.5 overflow-y-auto" aria-label="Workspace navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <AppLink
                 key={item.href}
                 href={item.href}
-                className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                aria-label={item.label}
+                title={item.label}
+                className={`relative flex items-center justify-center lg:justify-between gap-3 px-2 lg:px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   item.active
                     ? 'bg-primary/15 text-primary shadow-sm'
                     : 'text-base-content/60 hover:bg-white/5 hover:text-base-content'
                 }`}
               >
-                <span className="flex items-center gap-3 min-w-0">
-                  <Icon className={`w-4 h-4 shrink-0 ${item.active ? 'text-primary' : ''}`} />
-                  <span className="truncate">{item.label}</span>
+                <span className="flex items-center justify-center lg:justify-start gap-3 min-w-0">
+                  <Icon className={`w-5 h-5 lg:w-4 lg:h-4 shrink-0 ${item.active ? 'text-primary' : ''}`} />
+                  <span className="hidden lg:block truncate">{item.label}</span>
                 </span>
                 <AnimatePresence>
                   {item.count > 0 && (
@@ -193,7 +200,7 @@ export function DashboardShell({
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
-                      className="min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-content text-[10px] font-bold flex items-center justify-center tabular-nums"
+                      className="absolute right-0 top-0 lg:static min-w-[18px] lg:min-w-[20px] h-[18px] lg:h-5 px-1.5 rounded-full bg-primary text-primary-content text-[9px] lg:text-[10px] font-bold flex items-center justify-center tabular-nums"
                     >
                       {item.count > 99 ? '99+' : item.count}
                     </motion.span>
@@ -205,8 +212,8 @@ export function DashboardShell({
         </nav>
 
         {/* User footer */}
-        <div className="p-3 border-t border-white/5 space-y-2">
-          <div className="flex items-center gap-2.5 px-2 py-1.5">
+        <div className="p-1.5 lg:p-3 border-t border-white/5 space-y-2">
+          <div className="flex items-center justify-center lg:justify-start gap-2.5 px-0 lg:px-2 py-1.5">
             <Avatar
               src={user?.avatarUrl}
               name={user?.displayName || 'User'}
@@ -214,36 +221,39 @@ export function DashboardShell({
               showPresence
               isOnline={connected}
             />
-            <div className="min-w-0 flex-1">
+            <div className="hidden lg:block min-w-0 flex-1">
               <p className="text-xs font-semibold text-base-content truncate">{user?.displayName}</p>
               <p className="text-[10px] text-base-content/50 truncate font-mono">@{user?.username}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-col lg:flex-row items-stretch gap-1.5">
             <button
               type="button"
               onClick={() => void setThemePreference(theme === 'dark' ? 'light' : 'dark')}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs text-base-content/60 hover:text-base-content hover:bg-white/5 transition-all duration-200 cursor-pointer"
+              className="flex-1 flex items-center justify-center gap-1.5 h-9 lg:h-8 rounded-lg text-xs text-base-content/60 hover:text-base-content hover:bg-white/5 transition-all duration-200 cursor-pointer"
               aria-label="Toggle color theme"
+              title="Toggle color theme"
             >
               {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+              <span className="hidden lg:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </button>
             <button
               type="button"
               onClick={() => void handleSignOut()}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs text-error/80 hover:text-error hover:bg-error/8 transition-all duration-200 cursor-pointer"
+              className="flex-1 flex items-center justify-center gap-1.5 h-9 lg:h-8 rounded-lg text-xs text-error/80 hover:text-error hover:bg-error/8 transition-all duration-200 cursor-pointer"
+              aria-label="Sign out of ChatSphere"
+              title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
+              <span className="hidden lg:inline">Sign Out</span>
             </button>
           </div>
         </div>
       </aside>
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      <div className="relative flex-1 flex flex-col min-w-0 h-full overflow-hidden">
 
         {/* Reconnection banner */}
         <AnimatePresence>
@@ -280,8 +290,8 @@ export function DashboardShell({
         <main
           className={`flex-1 min-h-0 ${
             fullBleed
-              ? 'overflow-hidden flex flex-col'
-              : 'overflow-y-auto p-4 lg:p-6'
+              ? 'overflow-hidden flex flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0'
+              : 'overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:p-6'
           }`}
         >
           {children}
@@ -289,7 +299,7 @@ export function DashboardShell({
 
         <nav
           aria-label="Mobile navigation"
-          className="lg:hidden shrink-0 border-t border-white/10 bg-base-200/95 px-1 pt-1.5 backdrop-blur-xl"
+          className="lg:hidden absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-base-200/95 px-1 pt-1.5 backdrop-blur-xl"
           style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
         >
           <div className="flex items-stretch justify-around gap-1">
