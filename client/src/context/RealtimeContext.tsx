@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import Pusher from 'pusher-js';
 import type Members from 'pusher-js/types/src/core/channels/members';
+import type PresenceChannel from 'pusher-js/types/src/core/channels/presence_channel';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext.tsx';
 import { apiClient, extractApiError } from '../lib/api.ts';
@@ -25,7 +26,6 @@ import type {
 interface TypingUser {
   userId: string;
   displayName: string;
-  expiresAt: number;
 }
 
 interface RealtimeContextValue {
@@ -56,7 +56,7 @@ interface RealtimeContextValue {
   editMessage: (conversationId: string, messageId: string, content: string) => Promise<void>;
   deleteMessage: (conversationId: string, messageId: string) => Promise<void>;
   markConversationRead: (conversationId: string) => Promise<void>;
-  emitTyping: (conversationId: string, isTyping: boolean) => void;
+  emitTyping: (conversationId: string) => void;
 }
 
 const RealtimeContext = createContext<RealtimeContextValue | null>(null);
@@ -171,11 +171,87 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
   const [typingByConversation, setTypingByConversation] = useState<Record<string, TypingUser[]>>({});
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const typingTimeoutsRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const presenceChannelsRef = useRef(new Map<string, PresenceChannel>());
+  const typingChannelBindingsRef = useRef(
+    new Map<string, { channel: PresenceChannel; handler: (payload: unknown) => void }>()
+  );
+
+  const clearTypingForConversation = useCallback((conversationId: string) => {
+    const keyPrefix = `${conversationId}:`;
+    for (const [key, timeout] of typingTimeoutsRef.current) {
+      if (key.startsWith(keyPrefix)) {
+        clearTimeout(timeout);
+        typingTimeoutsRef.current.delete(key);
+      }
+    }
+    setTypingByConversation((prev) =>
+      prev[conversationId]?.length ? { ...prev, [conversationId]: [] } : prev
+    );
+  }, []);
+
+  const handleClientTyping = useCallback(
+    (conversationId: string, channel: PresenceChannel, payload: unknown) => {
+      if (
+        !user ||
+        activeConvRef.current !== conversationId ||
+        !payload ||
+        typeof payload !== 'object'
+      ) {
+        return;
+      }
+
+      const event = payload as { userId?: unknown; userName?: unknown };
+      if (
+        typeof event.userId !== 'string' ||
+        typeof event.userName !== 'string' ||
+        event.userId === user.id
+      ) {
+        return;
+      }
+
+      const typingUserId = event.userId;
+      const member = channel.members.get(typingUserId);
+      if (!member || member.info?.typingIndicatorsEnabled === false) return;
+
+      const displayName =
+        typeof member.info?.displayName === 'string' ? member.info.displayName : event.userName;
+      const key = `${conversationId}:${typingUserId}`;
+      const previousTimeout = typingTimeoutsRef.current.get(key);
+      if (previousTimeout) clearTimeout(previousTimeout);
+
+      setTypingByConversation((prev) => {
+        const existing = (prev[conversationId] || []).filter(
+          (typingUser) => typingUser.userId !== typingUserId
+        );
+        return {
+          ...prev,
+          [conversationId]: [...existing, { userId: typingUserId, displayName }],
+        };
+      });
+
+      const timeout = setTimeout(() => {
+        if (typingTimeoutsRef.current.get(key) !== timeout) return;
+        typingTimeoutsRef.current.delete(key);
+        setTypingByConversation((prev) => {
+          const current = prev[conversationId] || [];
+          const remaining = current.filter((typingUser) => typingUser.userId !== typingUserId);
+          return remaining.length === current.length
+            ? prev
+            : { ...prev, [conversationId]: remaining };
+        });
+      }, 3000);
+      typingTimeoutsRef.current.set(key, timeout);
+    },
+    [user]
+  );
 
   const setActiveConversationId = useCallback((id: string | null) => {
+    const previousId = activeConvRef.current;
+    if (previousId && previousId !== id) clearTypingForConversation(previousId);
     activeConvRef.current = id;
     setActiveConversationIdState(id);
-  }, []);
+  }, [clearTypingForConversation]);
 
   const refreshConversations = useCallback(async () => {
     if (!user) return;
@@ -278,24 +354,6 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
     [user]
   );
 
-  // Clean up expired typing indicators every 2s
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = Date.now();
-      setTypingByConversation((prev) => {
-        let changed = false;
-        const next: Record<string, TypingUser[]> = {};
-        for (const [cid, list] of Object.entries(prev)) {
-          const filtered = list.filter((u) => u.expiresAt > now);
-          if (filtered.length !== list.length) changed = true;
-          if (filtered.length > 0) next[cid] = filtered;
-        }
-        return changed ? next : prev;
-      });
-    }, 2000);
-    return () => clearInterval(timer);
-  }, []);
-
   const conversationChannelIds = conversations
     .map((conversation) => conversation.id)
     .sort()
@@ -346,7 +404,6 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
       }),
     });
     pusherRef.current = pusher;
-
     const handleConnect = () => {
       setConnected(true);
       setReconnecting(false);
@@ -393,6 +450,7 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
 
     const handleMessageNew = ({ message }: { message: ChatMessage }) => {
       lastSyncedIsoRef.current = new Date().toISOString();
+      clearTypingForConversation(message.conversationId);
       setMessagesByConversation((prev) => ({
         ...prev,
         [message.conversationId]: mergeMessagesIdempotent(
@@ -522,33 +580,6 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
       });
     };
 
-    const handleTypingUpdate = ({
-      conversationId,
-      userId: typingUserId,
-      displayName,
-      isTyping,
-    }: {
-      conversationId: string;
-      userId: string;
-      displayName: string;
-      isTyping: boolean;
-    }) => {
-      if (typingUserId === user.id) return;
-      setTypingByConversation((prev) => {
-        const existing = (prev[conversationId] || []).filter((t) => t.userId !== typingUserId);
-        if (!isTyping) {
-          return { ...prev, [conversationId]: existing };
-        }
-        return {
-          ...prev,
-          [conversationId]: [
-            ...existing,
-            { userId: typingUserId, displayName, expiresAt: Date.now() + 4500 },
-          ],
-        };
-      });
-    };
-
     const handlePresenceUpdate = ({
       userId: targetUserId,
       isOnline,
@@ -652,16 +683,6 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
             }
           );
           break;
-        case 'typing:update':
-          handleTypingUpdate(
-            payload as {
-              conversationId: string;
-              userId: string;
-              displayName: string;
-              isTyping: boolean;
-            }
-          );
-          break;
         case 'conversation:created':
           handleConversationCreated(payload as { conversation: ConversationItem });
           break;
@@ -702,6 +723,12 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
         lastSeenAt: new Date().toISOString(),
       });
       if (!isOnline) {
+        const typingKey = `${conversationId}:${member.id}`;
+        const typingTimeout = typingTimeoutsRef.current.get(typingKey);
+        if (typingTimeout) {
+          clearTimeout(typingTimeout);
+          typingTimeoutsRef.current.delete(typingKey);
+        }
         setTypingByConversation((prev) => ({
           ...prev,
           [conversationId]: (prev[conversationId] || []).filter(
@@ -722,7 +749,8 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
 
       const presenceChannel = pusher.subscribe(
         `presence-conversation-${conversationId}`
-      );
+      ) as PresenceChannel;
+      presenceChannelsRef.current.set(conversationId, presenceChannel);
       presenceChannel.bind('pusher:subscription_succeeded', (members: Members) => {
         members.each((member: { id: string; info: { onlineStatusVisible?: boolean } }) =>
           presenceMemberChanged(conversationId, member, true)
@@ -750,6 +778,14 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
     }
 
     return () => {
+      for (const binding of typingChannelBindingsRef.current.values()) {
+        binding.channel.unbind('client-typing', binding.handler);
+      }
+      typingChannelBindingsRef.current.clear();
+      for (const timeout of typingTimeoutsRef.current.values()) clearTimeout(timeout);
+      typingTimeoutsRef.current.clear();
+      presenceChannelsRef.current.clear();
+      setTypingByConversation({});
       pusher.unbind_global(handleRealtimeEvent);
       pusher.connection.unbind('connected', handleConnect);
       pusher.connection.unbind('state_change', handleConnectionState);
@@ -763,7 +799,31 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
     refreshNotifications,
     markConversationRead,
     setActiveConversationId,
+    clearTypingForConversation,
     conversationChannelIds,
+  ]);
+
+  useEffect(() => {
+    if (!activeConversationId || !connected) return;
+    const channel = presenceChannelsRef.current.get(activeConversationId);
+    if (!channel) return;
+
+    const handler = (payload: unknown) =>
+      handleClientTyping(activeConversationId, channel, payload);
+    channel.bind('client-typing', handler);
+    typingChannelBindingsRef.current.set(activeConversationId, { channel, handler });
+
+    return () => {
+      channel.unbind('client-typing', handler);
+      typingChannelBindingsRef.current.delete(activeConversationId);
+      clearTypingForConversation(activeConversationId);
+    };
+  }, [
+    activeConversationId,
+    connected,
+    conversationChannelIds,
+    handleClientTyping,
+    clearTypingForConversation,
   ]);
 
   const sendMessageOptimistic = useCallback(
@@ -933,11 +993,19 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
     }));
   }, []);
 
-  const emitTyping = useCallback((conversationId: string, isTyping: boolean) => {
-    void apiClient
-      .post('/realtime/typing', { conversationId, isTyping })
-      .catch((error: unknown) => toast.error(extractApiError(error).message));
-  }, []);
+  const emitTyping = useCallback((conversationId: string) => {
+    if (!user || !connected) return;
+    const channel = presenceChannelsRef.current.get(conversationId);
+    if (!channel?.subscribed) return;
+
+    const member = channel.members.get(user.id);
+    if (!member || member.info?.typingIndicatorsEnabled === false) return;
+
+    channel.trigger('client-typing', {
+      userId: user.id,
+      userName: user.displayName,
+    });
+  }, [user, connected]);
 
   return (
     <RealtimeContext.Provider

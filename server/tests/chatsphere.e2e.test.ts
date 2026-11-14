@@ -777,7 +777,7 @@ describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
     expect(afterClean.status).toBe('ORPHANED');
   });
 
-  it('10. Realtime authorization, typing, and reconnect sync use authenticated HTTP APIs', async () => {
+  it('10. Realtime authorization and reconnect sync use authenticated HTTP APIs', async () => {
     const unauthenticated = await request(baseUrl)
       .post('/api/realtime/auth')
       .send({ socket_id: '123.456', channel_name: `private-user-${aliceId}` })
@@ -792,19 +792,11 @@ describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
       .expect(503);
     expect(channelAuth.body.error.code).toBe('PUSHER_NOT_CONFIGURED');
 
-    const invalidMembership = await aliceAgent
+    await aliceAgent
       .post('/api/realtime/typing')
       .set('X-CSRF-Token', aliceCsrf)
       .send({ conversationId: 'not-a-conversation', isTyping: true })
-      .expect(403);
-    expect(invalidMembership.body.error.code).toBe('NOT_CONVERSATION_MEMBER');
-
-    const typing = await aliceAgent
-      .post('/api/realtime/typing')
-      .set('X-CSRF-Token', aliceCsrf)
-      .send({ conversationId: directConvId, isTyping: true })
-      .expect(503);
-    expect(typing.body.error.code).toBe('PUSHER_NOT_CONFIGURED');
+      .expect(404);
 
     const since = new Date().toISOString();
     for (const [clientMessageId, content] of [

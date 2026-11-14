@@ -205,7 +205,7 @@ The root `vercel.json` builds the Next.js client as a static export, publishes i
    VITE_PUSHER_CLUSTER=<same Pusher cluster>
    ```
 
-   Set `VITE_PUSHER_KEY` and `VITE_PUSHER_CLUSTER` for the Vercel build so Next.js exposes only the public key and cluster in browser code. Never expose `PUSHER_SECRET`, database credentials, or signing secrets as client variables.
+   Set `VITE_PUSHER_KEY` and `VITE_PUSHER_CLUSTER` for the Vercel build so Next.js exposes only the public key and cluster in browser code. Enable **Client Events** in the Pusher app settings; typing indicators use `client-typing` events on authenticated presence channels. Never expose `PUSHER_SECRET`, database credentials, or signing secrets as client variables.
 3. Configure `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` for email and media features. Google sign-in requires `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL=https://<your-vercel-domain>/api/auth/google/callback`; register that exact URL with Google. Add optional web-push and AI provider variables as needed. Keep secrets in Vercel's server-side environment settings.
 4. Ensure the hosted database supports connection pooling. The API caches its Prisma client for warm invocations and sets `connection_limit=1` on Vercel when the database URL does not already specify one. Apply committed Prisma migrations to the hosted database as a deployment step; serverless function invocations do not run migrations.
 5. After deployment, check `https://<your-vercel-domain>/api/health`, then test sign-in, chat, presence/typing, uploads, notifications, and admin permissions.

@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { env } from '../config/env.ts';
 import { getPrisma } from '../db/prisma.ts';
 import { AuthRequest, requireAuth, requireCsrf } from '../middleware/security.ts';
-import { realtimeHub } from '../realtime/hub.ts';
 import { getPusher } from '../services/pusher.service.ts';
 import {
   assertActiveMembership,
@@ -66,7 +65,7 @@ realtimeRouter.post(
       const prisma = getPrisma();
       const settings = await prisma.userSettings.findUnique({
         where: { userId: user.id },
-        select: { onlineStatusVisible: true },
+        select: { onlineStatusVisible: true, typingIndicatorsEnabled: true },
       });
       res.json(
         getPusher().authorizeChannel(socketId, channelName, {
@@ -74,50 +73,10 @@ realtimeRouter.post(
           user_info: {
             displayName: user.displayName,
             onlineStatusVisible: settings?.onlineStatusVisible !== false,
+            typingIndicatorsEnabled: settings?.typingIndicatorsEnabled !== false,
           },
         })
       );
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
-realtimeRouter.post(
-  '/typing',
-  requireAuth,
-  requireCsrf,
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-      const { conversationId, isTyping } = z
-        .object({
-          conversationId: z.string().min(1),
-          isTyping: z.boolean(),
-        })
-        .parse(req.body);
-      await assertActiveMembership(conversationId, req.authUser!.id);
-      if (!env.pusher.enabled) {
-        throw Errors.serviceUnavailable(
-          'Realtime messaging is not configured.',
-          'PUSHER_NOT_CONFIGURED'
-        );
-      }
-
-      const prisma = getPrisma();
-      const settings = await prisma.userSettings.findUnique({
-        where: { userId: req.authUser!.id },
-        select: { typingIndicatorsEnabled: true },
-      });
-      if (settings?.typingIndicatorsEnabled !== false) {
-        realtimeHub.emitToConversation(conversationId, 'typing:update', {
-          conversationId,
-          userId: req.authUser!.id,
-          displayName: req.authUser!.displayName,
-          isTyping,
-        });
-      }
-
-      res.json({ success: true });
     } catch (err) {
       next(err);
     }

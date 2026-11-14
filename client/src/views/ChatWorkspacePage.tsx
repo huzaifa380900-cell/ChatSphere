@@ -172,7 +172,10 @@ export function ChatWorkspacePage({
   const transcriptionFileRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingLastSentRef = useRef<{ conversationId: string | null; timestamp: number }>({
+    conversationId: null,
+    timestamp: 0,
+  });
 
   useEffect(() => {
     setSidebarFilter(forcedMode);
@@ -485,7 +488,6 @@ export function ChatWorkspacePage({
     if (!activeConversationId || !text.trim()) return;
     const replyToSend = replyTarget;
     setReplyTarget(null);
-    emitTyping(activeConversationId, false);
     await sendMessageOptimistic({ conversationId: activeConversationId, content: text.trim(), type: 'TEXT', replyTo: replyToSend, stagedAttachments: [] });
     setMessageText('');
     setTranscriptionOpen(false);
@@ -555,12 +557,16 @@ export function ChatWorkspacePage({
 
   const handleComposerChange = (val: string) => {
     setMessageText(val);
-    if (!activeConversationId) return;
-    emitTyping(activeConversationId, val.trim().length > 0);
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      emitTyping(activeConversationId, false);
-    }, 2500);
+    if (!activeConversationId || !val.trim()) return;
+
+    const now = Date.now();
+    if (typingLastSentRef.current.conversationId !== activeConversationId) {
+      typingLastSentRef.current = { conversationId: activeConversationId, timestamp: 0 };
+    }
+    if (now - typingLastSentRef.current.timestamp < 2500) return;
+
+    typingLastSentRef.current.timestamp = now;
+    emitTyping(activeConversationId);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -580,7 +586,6 @@ export function ChatWorkspacePage({
     setMessageText('');
     setStagedAttachments([]);
     setReplyTarget(null);
-    emitTyping(activeConversationId, false);
 
     await sendMessageOptimistic({
       conversationId: activeConversationId,
