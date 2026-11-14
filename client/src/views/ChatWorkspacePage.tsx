@@ -172,10 +172,7 @@ export function ChatWorkspacePage({
   const transcriptionFileRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingLastSentRef = useRef<{ conversationId: string | null; timestamp: number }>({
-    conversationId: null,
-    timestamp: 0,
-  });
+  const lastTypedRef = useRef<number>(0);
 
   useEffect(() => {
     setSidebarFilter(forcedMode);
@@ -560,12 +557,8 @@ export function ChatWorkspacePage({
     if (!activeConversationId || !val.trim()) return;
 
     const now = Date.now();
-    if (typingLastSentRef.current.conversationId !== activeConversationId) {
-      typingLastSentRef.current = { conversationId: activeConversationId, timestamp: 0 };
-    }
-    if (now - typingLastSentRef.current.timestamp < 2500) return;
-
-    typingLastSentRef.current.timestamp = now;
+    if (now - lastTypedRef.current < 3000) return;
+    lastTypedRef.current = now;
     emitTyping(activeConversationId);
   };
 

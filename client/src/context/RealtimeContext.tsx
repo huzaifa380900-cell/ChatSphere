@@ -8,12 +8,12 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import Pusher from 'pusher-js';
 import type Members from 'pusher-js/types/src/core/channels/members';
 import type PresenceChannel from 'pusher-js/types/src/core/channels/presence_channel';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext.tsx';
 import { apiClient, extractApiError } from '../lib/api.ts';
+import { getPusherClient } from '../lib/pusher-client.ts';
 import type {
   ChatMessage,
   ConversationItem,
@@ -153,7 +153,7 @@ function mergeConversationPresence(
 
 export function ChatRealtimeProvider({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const pusherRef = useRef<Pusher | null>(null);
+  const userId = user?.id ?? null;
   const activeConvRef = useRef<string | null>(null);
   const lastSyncedIsoRef = useRef<string>(new Date().toISOString());
   const pendingAttachmentsMemoryRef = useRef<Map<string, MessageAttachmentItem[]>>(new Map());
@@ -171,19 +171,18 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
   const [typingByConversation, setTypingByConversation] = useState<Record<string, TypingUser[]>>({});
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const typingTimeoutsRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingTimeoutConversationRef = useRef<string | null>(null);
   const presenceChannelsRef = useRef(new Map<string, PresenceChannel>());
   const typingChannelBindingsRef = useRef(
     new Map<string, { channel: PresenceChannel; handler: (payload: unknown) => void }>()
   );
 
   const clearTypingForConversation = useCallback((conversationId: string) => {
-    const keyPrefix = `${conversationId}:`;
-    for (const [key, timeout] of typingTimeoutsRef.current) {
-      if (key.startsWith(keyPrefix)) {
-        clearTimeout(timeout);
-        typingTimeoutsRef.current.delete(key);
-      }
+    if (typingTimeoutConversationRef.current === conversationId && typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+      typingTimeoutConversationRef.current = null;
     }
     setTypingByConversation((prev) =>
       prev[conversationId]?.length ? { ...prev, [conversationId]: [] } : prev
@@ -193,7 +192,7 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
   const handleClientTyping = useCallback(
     (conversationId: string, channel: PresenceChannel, payload: unknown) => {
       if (
-        !user ||
+        !userId ||
         activeConvRef.current !== conversationId ||
         !payload ||
         typeof payload !== 'object'
@@ -205,7 +204,7 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
       if (
         typeof event.userId !== 'string' ||
         typeof event.userName !== 'string' ||
-        event.userId === user.id
+        event.userId === userId
       ) {
         return;
       }
@@ -216,9 +215,7 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
 
       const displayName =
         typeof member.info?.displayName === 'string' ? member.info.displayName : event.userName;
-      const key = `${conversationId}:${typingUserId}`;
-      const previousTimeout = typingTimeoutsRef.current.get(key);
-      if (previousTimeout) clearTimeout(previousTimeout);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
       setTypingByConversation((prev) => {
         const existing = (prev[conversationId] || []).filter(
@@ -231,19 +228,18 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
       });
 
       const timeout = setTimeout(() => {
-        if (typingTimeoutsRef.current.get(key) !== timeout) return;
-        typingTimeoutsRef.current.delete(key);
+        if (typingTimeoutRef.current !== timeout) return;
+        typingTimeoutRef.current = null;
+        typingTimeoutConversationRef.current = null;
         setTypingByConversation((prev) => {
           const current = prev[conversationId] || [];
-          const remaining = current.filter((typingUser) => typingUser.userId !== typingUserId);
-          return remaining.length === current.length
-            ? prev
-            : { ...prev, [conversationId]: remaining };
+          return current.length ? { ...prev, [conversationId]: [] } : prev;
         });
-      }, 3000);
-      typingTimeoutsRef.current.set(key, timeout);
+      }, 3500);
+      typingTimeoutRef.current = timeout;
+      typingTimeoutConversationRef.current = conversationId;
     },
-    [user]
+    [userId]
   );
 
   const setActiveConversationId = useCallback((id: string | null) => {
@@ -359,13 +355,28 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
     .sort()
     .join(',');
 
+  const latestActionsRef = useRef({
+    logout,
+    refreshConversations,
+    refreshNotifications,
+    markConversationRead,
+    setActiveConversationId,
+    clearTypingForConversation,
+  });
+  latestActionsRef.current = {
+    logout,
+    refreshConversations,
+    refreshNotifications,
+    markConversationRead,
+    setActiveConversationId,
+    clearTypingForConversation,
+  };
+
+  const reconnectingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Connect and manage authenticated Pusher subscriptions.
   useEffect(() => {
-    if (!user) {
-      if (pusherRef.current) {
-        pusherRef.current.disconnect();
-        pusherRef.current = null;
-      }
+    if (!userId) {
       setConnected(false);
       setReconnecting(false);
       setConversations([]);
@@ -376,38 +387,25 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    void refreshConversations();
-    void refreshNotifications();
+    void latestActionsRef.current.refreshConversations();
+    void latestActionsRef.current.refreshNotifications();
 
-    const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
-    if (!key || !cluster) {
+    const pusher = getPusherClient();
+    if (!pusher) {
       setConnected(false);
       setReconnecting(false);
       toast.error('Realtime messaging is not configured. Add the Pusher public key and cluster.');
       return;
     }
 
-    const pusher = new Pusher(key, {
-      cluster,
-      forceTLS: true,
-      authorizer: (channel) => ({
-        authorize: (socketId, callback) => {
-          void apiClient
-            .post('/realtime/auth', {
-              socket_id: socketId,
-              channel_name: channel.name,
-            })
-            .then((response) => callback(null, response.data))
-            .catch((error: Error) => callback(error, null));
-        },
-      }),
-    });
-    pusherRef.current = pusher;
     const handleConnect = () => {
+      if (reconnectingTimeoutRef.current) {
+        clearTimeout(reconnectingTimeoutRef.current);
+        reconnectingTimeoutRef.current = null;
+      }
       setConnected(true);
       setReconnecting(false);
-      void refreshNotifications();
+      void latestActionsRef.current.refreshNotifications();
 
       const currentActive = activeConvRef.current;
       if (currentActive) {
@@ -431,12 +429,26 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
           })
           .catch((error: unknown) => toast.error(extractApiError(error).message));
       }
-      void refreshConversations();
+      void latestActionsRef.current.refreshConversations();
     };
 
     const handleConnectionState = (states: { current: string }) => {
-      setConnected(states.current === 'connected');
-      setReconnecting(states.current === 'connecting' || states.current === 'unavailable');
+      const isConnected = states.current === 'connected';
+      const isReconnecting = states.current === 'connecting' || states.current === 'unavailable';
+      setConnected(isConnected);
+
+      if (isConnected || !isReconnecting) {
+        if (reconnectingTimeoutRef.current) {
+          clearTimeout(reconnectingTimeoutRef.current);
+          reconnectingTimeoutRef.current = null;
+        }
+        setReconnecting(false);
+      } else if (!reconnectingTimeoutRef.current) {
+        reconnectingTimeoutRef.current = setTimeout(() => {
+          reconnectingTimeoutRef.current = null;
+          if (pusher.connection.state !== 'connected') setReconnecting(true);
+        }, 2000);
+      }
     };
 
     const handleForceLogout = ({ reason }: { reason: string }) => {
@@ -445,12 +457,12 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
           ? 'Your account has been suspended by an administrator.'
           : 'Your session was signed out.'
       );
-      void logout();
+      void latestActionsRef.current.logout();
     };
 
     const handleMessageNew = ({ message }: { message: ChatMessage }) => {
       lastSyncedIsoRef.current = new Date().toISOString();
-      clearTypingForConversation(message.conversationId);
+      latestActionsRef.current.clearTypingForConversation(message.conversationId);
       setMessagesByConversation((prev) => ({
         ...prev,
         [message.conversationId]: mergeMessagesIdempotent(
@@ -459,8 +471,8 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
         ),
       }));
 
-      if (activeConvRef.current === message.conversationId && message.senderId !== user.id) {
-        void markConversationRead(message.conversationId);
+      if (activeConvRef.current === message.conversationId && message.senderId !== userId) {
+        void latestActionsRef.current.markConversationRead(message.conversationId);
       }
     };
 
@@ -478,14 +490,14 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
       setConversations((prev) => {
         const exists = prev.some((c) => c.id === conversationId);
         if (!exists) {
-          void refreshConversations();
+          void latestActionsRef.current.refreshConversations();
           return prev;
         }
         const updated = prev.map((c) => {
           if (c.id !== conversationId) return c;
           const isViewing = activeConvRef.current === conversationId;
           const nextUnread =
-            senderId === user.id || isViewing ? 0 : (c.unreadCount || 0) + 1;
+            senderId === userId || isViewing ? 0 : (c.unreadCount || 0) + 1;
           return {
             ...c,
             lastMessage,
@@ -529,7 +541,7 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
           ),
         };
       });
-      void refreshConversations();
+      void latestActionsRef.current.refreshConversations();
     };
 
     const handleReceiptsUpdated = ({
@@ -634,7 +646,7 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
     const handleConversationRemoved = ({ conversationId }: { conversationId: string }) => {
       setConversations((prev) => prev.filter((c) => c.id !== conversationId));
       if (activeConvRef.current === conversationId) {
-        setActiveConversationId(null);
+        latestActionsRef.current.setActiveConversationId(null);
         toast('You are no longer a member of that conversation.');
       }
     };
@@ -692,13 +704,13 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
         case 'conversation:updated':
         case 'conversation:members_changed':
         case 'conversation:member_left':
-          void refreshConversations();
+          void latestActionsRef.current.refreshConversations();
           break;
         case 'notification:new':
           handleNotificationNew(payload as { notification: NotificationItem });
           break;
         case 'notification:refresh':
-          void refreshNotifications();
+          void latestActionsRef.current.refreshNotifications();
           break;
       }
     };
@@ -706,7 +718,8 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
     pusher.connection.bind('connected', handleConnect);
     pusher.connection.bind('state_change', handleConnectionState);
     pusher.bind_global(handleRealtimeEvent);
-    const userChannel = pusher.subscribe(`private-user-${user.id}`);
+    const subscribedChannelNames = [`private-user-${userId}`];
+    const userChannel = pusher.subscribe(subscribedChannelNames[0]);
     userChannel.bind('pusher:subscription_error', () => {
       toast.error('Realtime authentication failed. Please sign in again.');
     });
@@ -723,12 +736,6 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
         lastSeenAt: new Date().toISOString(),
       });
       if (!isOnline) {
-        const typingKey = `${conversationId}:${member.id}`;
-        const typingTimeout = typingTimeoutsRef.current.get(typingKey);
-        if (typingTimeout) {
-          clearTimeout(typingTimeout);
-          typingTimeoutsRef.current.delete(typingKey);
-        }
         setTypingByConversation((prev) => ({
           ...prev,
           [conversationId]: (prev[conversationId] || []).filter(
@@ -742,7 +749,12 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
       ? conversationChannelIds.split(',')
       : [];
     for (const conversationId of subscribedConversationIds) {
-      const channel = pusher.subscribe(`private-conversation-${conversationId}`);
+      const privateChannelName = `private-conversation-${conversationId}`;
+      subscribedChannelNames.push(
+        privateChannelName,
+        `presence-conversation-${conversationId}`
+      );
+      const channel = pusher.subscribe(privateChannelName);
       channel.bind('pusher:subscription_error', () => {
         toast.error('Could not subscribe to a conversation’s realtime updates.');
       });
@@ -782,29 +794,29 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
         binding.channel.unbind('client-typing', binding.handler);
       }
       typingChannelBindingsRef.current.clear();
-      for (const timeout of typingTimeoutsRef.current.values()) clearTimeout(timeout);
-      typingTimeoutsRef.current.clear();
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+        typingTimeoutConversationRef.current = null;
+      }
+      if (reconnectingTimeoutRef.current) {
+        clearTimeout(reconnectingTimeoutRef.current);
+        reconnectingTimeoutRef.current = null;
+      }
       presenceChannelsRef.current.clear();
       setTypingByConversation({});
       pusher.unbind_global(handleRealtimeEvent);
       pusher.connection.unbind('connected', handleConnect);
       pusher.connection.unbind('state_change', handleConnectionState);
-      pusher.disconnect();
-      pusherRef.current = null;
+      for (const channelName of subscribedChannelNames) {
+        pusher.channel(channelName)?.unbind();
+        pusher.unsubscribe(channelName);
+      }
     };
-  }, [
-    user,
-    logout,
-    refreshConversations,
-    refreshNotifications,
-    markConversationRead,
-    setActiveConversationId,
-    clearTypingForConversation,
-    conversationChannelIds,
-  ]);
+  }, [userId, conversationChannelIds]);
 
   useEffect(() => {
-    if (!activeConversationId || !connected) return;
+    if (!activeConversationId || !userId) return;
     const channel = presenceChannelsRef.current.get(activeConversationId);
     if (!channel) return;
 
@@ -820,7 +832,7 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
     };
   }, [
     activeConversationId,
-    connected,
+    userId,
     conversationChannelIds,
     handleClientTyping,
     clearTypingForConversation,
