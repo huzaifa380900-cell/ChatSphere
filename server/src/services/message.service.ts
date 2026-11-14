@@ -334,8 +334,10 @@ export async function sendMessagePersistent(params: {
 
   for (const notif of notificationsToEmit) {
     realtimeHub.emitToUser(notif.userId, 'notification:new', { notification: notif });
-    void sendPushNotification(notif.userId, notif);
   }
+  await Promise.all(
+    notificationsToEmit.map((notif) => sendPushNotification(notif.userId, notif))
+  );
 
   return {
     message: formatted,

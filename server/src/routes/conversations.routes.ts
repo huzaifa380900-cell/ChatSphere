@@ -189,6 +189,9 @@ conversationsRouter.post(
       if (!targetUser || targetUser.status !== 'ACTIVE') {
         throw Errors.notFound('Recipient user is unavailable or does not exist.');
       }
+      if (targetUser.role === 'ADMIN' && req.authUser!.role !== 'ADMIN') {
+        throw Errors.notFound('Recipient user is unavailable or does not exist.');
+      }
 
       const directKey = [userId, targetUserId].sort().join(':');
 
@@ -327,8 +330,12 @@ conversationsRouter.post(
 
       for (const notification of notifications) {
         realtimeHub.emitToUser(notification.userId, 'notification:new', { notification });
-        void sendPushNotification(notification.userId, notification);
       }
+      await Promise.all(
+        notifications.map((notification) =>
+          sendPushNotification(notification.userId, notification)
+        )
+      );
 
       const allParticipantIds = [creatorId, ...uniqueOtherIds];
       for (const uid of allParticipantIds) {

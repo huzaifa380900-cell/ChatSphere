@@ -6,6 +6,7 @@ import { recordAuditLog } from '../services/audit.service.ts';
 import { Errors } from '../utils/errors.ts';
 import { env } from '../config/env.ts';
 import { z } from 'zod';
+import { realtimeHub } from '../realtime/hub.ts';
 
 export const notificationsRouter = Router();
 
@@ -152,20 +153,16 @@ notificationsRouter.patch(
     try {
       const id = String(req.params.id);
       const prisma = getPrisma();
-      const notif = await prisma.notification.findFirst({
+      const result = await prisma.notification.deleteMany({
         where: { id, userId: req.authUser!.id },
       });
 
-      if (!notif) {
+      if (result.count === 0) {
         throw Errors.notFound('Notification not found.');
       }
 
-      const updated = await prisma.notification.update({
-        where: { id: notif.id },
-        data: { isRead: true, readAt: new Date() },
-      });
-
-      res.json({ success: true, data: { notification: updated } });
+      realtimeHub.emitToUser(req.authUser!.id, 'notification:refresh', {});
+      res.json({ success: true, data: { notificationId: id, deleted: true } });
     } catch (err) {
       next(err);
     }
@@ -183,6 +180,9 @@ notificationsRouter.post(
         data: { isRead: true, readAt: new Date() },
       });
 
+      if (result.count > 0) {
+        realtimeHub.emitToUser(req.authUser!.id, 'notification:refresh', {});
+      }
       res.json({ success: true, data: { markedCount: result.count } });
     } catch (err) {
       next(err);

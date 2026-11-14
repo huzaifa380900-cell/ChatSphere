@@ -410,6 +410,17 @@ describe('ChatSphere End-to-End Full-Stack Verification Suite', () => {
       .expect(200);
     expect(profRes.body.data.user.role).toBe('USER');
 
+    const userSearch = await aliceAgent.get('/api/users/search?q=Platform').expect(200);
+    expect(userSearch.body.data.users).not.toContainEqual(
+      expect.objectContaining({ id: adminId })
+    );
+
+    await aliceAgent
+      .post('/api/conversations/direct')
+      .set('X-CSRF-Token', aliceCsrf)
+      .send({ targetUserId: adminId })
+      .expect(404);
+
     // Admin has full access to overview, users, reports, and audit logs
     const overviewRes = await adminAgent.get('/api/admin/overview').expect(200);
     expect(overviewRes.body.data.stats.totalUsers).toBe(4);

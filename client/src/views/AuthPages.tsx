@@ -115,7 +115,9 @@ function AuthCardLayout({
               </div>
               <span className="text-xs font-semibold text-cyan-400 tracking-wide">ChatSphere</span>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">{title}</h1>
+            <h1 className="max-w-full break-words text-xl sm:text-2xl font-bold leading-snug tracking-normal text-white">
+              {title}
+            </h1>
             <p className="text-sm text-slate-400 leading-relaxed">{subtitle}</p>
           </div>
           {children}

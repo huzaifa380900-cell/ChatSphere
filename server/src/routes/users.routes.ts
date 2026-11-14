@@ -26,6 +26,7 @@ usersRouter.get('/search', async (req: AuthRequest, res: Response, next: NextFun
       where: {
         id: { not: req.authUser!.id },
         status: 'ACTIVE',
+        ...(req.authUser!.role === 'ADMIN' ? {} : { role: 'USER' }),
         ...(query
           ? {
               OR: [

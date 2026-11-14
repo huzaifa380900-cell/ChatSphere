@@ -19,6 +19,11 @@ function decodeVapidPublicKey(publicKey: string): ArrayBuffer {
   return bytes.buffer;
 }
 
+async function getReadyServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
+  await navigator.serviceWorker.register('/service-worker.js');
+  return navigator.serviceWorker.ready;
+}
+
 export function NotificationsPage() {
   const { notifications, unreadNotificationCount, refreshNotifications } = useChatRealtime();
   const { navigate } = useRouter();
@@ -48,7 +53,7 @@ export function NotificationsPage() {
       try {
         const [config, registration] = await Promise.all([
           apiClient.get<{ success: boolean; data: { enabled: boolean } }>('/notifications/push/config'),
-          navigator.serviceWorker.register('/service-worker.js'),
+          getReadyServiceWorkerRegistration(),
         ]);
         if (!active) return;
         setPushConfigured(config.data.data.enabled);
@@ -96,7 +101,7 @@ export function NotificationsPage() {
         throw new Error('Device notifications are not configured on the server yet.');
       }
 
-      const registration = await navigator.serviceWorker.register('/service-worker.js');
+      const registration = await getReadyServiceWorkerRegistration();
       const existingSubscription = await registration.pushManager.getSubscription();
       const subscription =
         existingSubscription ??
@@ -158,13 +163,11 @@ export function NotificationsPage() {
   };
 
   const handleOpenNotification = async (notif: NotificationItem) => {
-    if (!notif.isRead) {
-      try {
-        await apiClient.patch(`/notifications/${notif.id}/read`);
-        await refreshNotifications();
-      } catch {
-        // Ignore
-      }
+    try {
+      await apiClient.patch(`/notifications/${notif.id}/read`);
+      await refreshNotifications();
+    } catch (err) {
+      toast.error(extractApiError(err).message);
     }
     if (notif.conversationId) {
       navigate(`/chat?conversation=${encodeURIComponent(notif.conversationId)}`);

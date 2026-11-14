@@ -170,12 +170,23 @@ export function ChatWorkspacePage({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const transcriptionFileRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setSidebarFilter(forcedMode);
   }, [forcedMode]);
+
+  useEffect(() => {
+    const composer = composerRef.current;
+    if (!composer) return;
+
+    const maxHeight = 160;
+    composer.style.height = 'auto';
+    composer.style.height = `${Math.min(composer.scrollHeight, maxHeight)}px`;
+    composer.style.overflowY = composer.scrollHeight > maxHeight ? 'auto' : 'hidden';
+  }, [messageText, activeConversationId]);
 
   // Honor ?conversation=<id> query param from Notifications page
   useEffect(() => {
@@ -772,7 +783,7 @@ export function ChatWorkspacePage({
             className="btn btn-sm btn-ghost border border-base-300 gap-1.5 whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
-            <span>New Direct</span>
+            <span className="hidden sm:inline">New Direct</span>
           </button>
           <button
             type="button"
@@ -784,7 +795,7 @@ export function ChatWorkspacePage({
             className="btn btn-sm btn-primary gap-1.5 whitespace-nowrap"
           >
             <Users className="w-4 h-4" />
-            <span>New Group</span>
+            <span className="hidden sm:inline">New Group</span>
           </button>
         </div>
       }
@@ -1485,7 +1496,10 @@ export function ChatWorkspacePage({
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSend} className="relative flex items-end gap-2">
+                <form
+                  onSubmit={handleSend}
+                  className="relative flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-2"
+                >
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -1496,94 +1510,99 @@ export function ChatWorkspacePage({
                   />
                   <input ref={transcriptionFileRef} type="file" accept="audio/*" onChange={handleTranscriptionFileChange} className="hidden" />
 
-                  <button type="button" onClick={() => { setAiWriterText(messageText); setAiWriterOpen(true); }} className="btn btn-sm btn-ghost btn-square shrink-0" title="AI message writer" aria-label="AI message writer">
-                    <WandSparkles className="w-4 h-4" />
-                  </button>
-                  <button type="button" onClick={() => setAiStickerOpen(true)} className="btn btn-sm btn-ghost btn-square shrink-0" title="Create AI sticker or avatar" aria-label="Create AI sticker or avatar">
-                    <ImagePlus className="w-4 h-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="btn btn-sm btn-ghost btn-square shrink-0"
-                    title="Upload media or document to Cloudinary"
-                    aria-label="Attach file"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => void handleStartVoiceNote()}
-                    className="btn btn-sm btn-ghost btn-square shrink-0"
-                    title="Record voice message"
-                    aria-label="Record voice message"
-                  >
-                    <Mic className="w-4 h-4" />
-                  </button>
-                  <button type="button" onClick={() => transcriptionFileRef.current?.click()} disabled={transcribing} className="btn btn-sm btn-ghost btn-square shrink-0" title="Transcribe an audio file" aria-label="Transcribe an audio file">
-                    {transcribing ? <span className="loading loading-spinner loading-xs" /> : <AudioLines className="w-4 h-4" />}
-                  </button>
-                  <button type="button" onClick={() => recordingForTranscription ? transcriptionRecorderRef.current?.stop() : void handleStartTranscriptionRecording()} disabled={transcribing} className={`btn btn-sm btn-ghost btn-square shrink-0 ${recordingForTranscription ? 'text-error' : ''}`} title={recordingForTranscription ? 'Stop and transcribe recording' : 'Record speech to transcribe'} aria-label={recordingForTranscription ? 'Stop and transcribe recording' : 'Record speech to transcribe'}>
-                    {recordingForTranscription ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                  </button>
-
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setEmojiOpen((o) => !o)}
-                      className="btn btn-sm btn-ghost btn-square shrink-0"
-                      title="Insert emoji"
-                      aria-label="Insert emoji"
-                    >
-                      <Smile className="w-4 h-4" />
+                  <div className="order-1 flex min-w-0 max-w-full items-center gap-1 overflow-x-auto sm:contents">
+                    <button type="button" onClick={() => { setAiWriterText(messageText); setAiWriterOpen(true); }} className="btn btn-sm btn-ghost btn-square shrink-0" title="AI message writer" aria-label="AI message writer">
+                      <WandSparkles className="w-4 h-4" />
+                    </button>
+                    <button type="button" onClick={() => setAiStickerOpen(true)} className="btn btn-sm btn-ghost btn-square shrink-0" title="Create AI sticker or avatar" aria-label="Create AI sticker or avatar">
+                      <ImagePlus className="w-4 h-4" />
                     </button>
 
-                    {emojiOpen && (
-                      <div className="absolute bottom-11 left-0 z-30 p-2 rounded-xl bg-base-200 border border-base-300 shadow-lg grid grid-cols-6 gap-1 w-52">
-                        {QUICK_EMOJIS.map((em) => (
-                          <button
-                            key={em}
-                            type="button"
-                            onClick={() => {
-                              setMessageText((t) => `${t}${em}`);
-                              setEmojiOpen(false);
-                            }}
-                            className="p-1.5 text-base hover:bg-base-300 rounded-md cursor-pointer"
-                          >
-                            {em}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="btn btn-sm btn-ghost btn-square shrink-0"
+                      title="Upload media or document to Cloudinary"
+                      aria-label="Attach file"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleStartVoiceNote()}
+                      className="btn btn-sm btn-ghost btn-square shrink-0"
+                      title="Record voice message"
+                      aria-label="Record voice message"
+                    >
+                      <Mic className="w-4 h-4" />
+                    </button>
+                    <button type="button" onClick={() => transcriptionFileRef.current?.click()} disabled={transcribing} className="btn btn-sm btn-ghost btn-square shrink-0" title="Transcribe an audio file" aria-label="Transcribe an audio file">
+                      {transcribing ? <span className="loading loading-spinner loading-xs" /> : <AudioLines className="w-4 h-4" />}
+                    </button>
+                    <button type="button" onClick={() => recordingForTranscription ? transcriptionRecorderRef.current?.stop() : void handleStartTranscriptionRecording()} disabled={transcribing} className={`btn btn-sm btn-ghost btn-square shrink-0 ${recordingForTranscription ? 'text-error' : ''}`} title={recordingForTranscription ? 'Stop and transcribe recording' : 'Record speech to transcribe'} aria-label={recordingForTranscription ? 'Stop and transcribe recording' : 'Record speech to transcribe'}>
+                      {recordingForTranscription ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </button>
+
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setEmojiOpen((o) => !o)}
+                        className="btn btn-sm btn-ghost btn-square shrink-0"
+                        title="Insert emoji"
+                        aria-label="Insert emoji"
+                      >
+                        <Smile className="w-4 h-4" />
+                      </button>
+
+                      {emojiOpen && (
+                        <div className="absolute bottom-11 left-0 z-30 p-2 rounded-xl bg-base-200 border border-base-300 shadow-lg grid grid-cols-6 gap-1 w-52">
+                          {QUICK_EMOJIS.map((em) => (
+                            <button
+                              key={em}
+                              type="button"
+                              onClick={() => {
+                                setMessageText((t) => `${t}${em}`);
+                                setEmojiOpen(false);
+                              }}
+                              className="p-1.5 text-base hover:bg-base-300 rounded-md cursor-pointer"
+                            >
+                              {em}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <textarea
-                    value={messageText}
-                    onChange={(e) => handleComposerChange(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        void handleSend(e);
-                      }
-                    }}
-                    rows={1}
-                    placeholder="Write a message..."
-                    className="flex-1 px-3.5 py-2 text-sm rounded-xl bg-base-100 border border-base-300 focus:outline-none focus:border-primary resize-none max-h-32"
-                  />
+                  <div className="order-2 flex w-full min-w-0 items-end gap-2 sm:contents">
+                    <textarea
+                      ref={composerRef}
+                      value={messageText}
+                      onChange={(e) => handleComposerChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          void handleSend(e);
+                        }
+                      }}
+                      rows={1}
+                      placeholder="Write a message..."
+                      className="min-h-11 max-h-40 w-full min-w-0 flex-1 resize-none overflow-y-hidden break-words rounded-xl border border-base-300 bg-base-100 px-3.5 py-2 text-sm leading-5 focus:border-primary focus:outline-none [overflow-wrap:anywhere]"
+                    />
 
-                  <button
-                    type="submit"
-                    disabled={
-                      uploadingItems.some((u) => u.status === 'uploading') ||
-                      (!messageText.trim() && stagedAttachments.length === 0)
-                    }
-                    className="btn btn-sm btn-primary gap-1.5 shrink-0"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span className="hidden sm:inline">Send</span>
-                  </button>
+                    <button
+                      type="submit"
+                      disabled={
+                        uploadingItems.some((u) => u.status === 'uploading') ||
+                        (!messageText.trim() && stagedAttachments.length === 0)
+                      }
+                      className="btn btn-sm btn-primary gap-1.5 shrink-0"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span className="hidden sm:inline">Send</span>
+                    </button>
+                  </div>
                 </form>
               )}
             </div>
@@ -1747,29 +1766,295 @@ export function ChatWorkspacePage({
       </div>
 
       {aiWriterOpen && (
-        <div role="dialog" aria-modal="true" aria-labelledby="ai-writer-title" className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-3 sm:p-6" onClick={() => !aiWorking && setAiWriterOpen(false)}>
-          <div className="bg-base-200 border border-base-300 rounded-2xl p-4 sm:p-6 w-full max-w-2xl max-h-[92vh] overflow-y-auto space-y-4" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between"><div><h2 id="ai-writer-title" className="text-lg font-bold">AI Message Writer</h2><p className="text-xs text-base-content/60">Generated text stays editable until you insert or send it.</p></div><button type="button" onClick={() => setAiWriterOpen(false)} className="btn btn-sm btn-ghost btn-square" aria-label="Close writer"><X className="w-4 h-4" /></button></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="form-control"><span className="label-text text-xs mb-1">Action</span><select className="select select-bordered select-sm" value={aiWriterAction} onChange={(event) => setAiWriterAction(event.target.value as typeof aiWriterAction)}><option value="write">Write a message</option><option value="rewrite">Rewrite</option><option value="grammar">Correct grammar</option><option value="shorten">Shorten</option><option value="expand">Expand</option><option value="translate">Translate</option></select></label>
-              <label className="form-control"><span className="label-text text-xs mb-1">Tone</span><select className="select select-bordered select-sm" value={aiWriterTone} onChange={(event) => setAiWriterTone(event.target.value as typeof aiWriterTone)}><option>friendly</option><option>professional</option><option>casual</option><option>romantic</option><option>funny</option><option>formal</option></select></label>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-writer-title"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-3 sm:p-6"
+          onClick={() => !aiWorking && setAiWriterOpen(false)}
+        >
+          <div
+            className="my-auto max-h-[92vh] w-full max-w-2xl space-y-5 overflow-y-auto rounded-2xl border border-base-300 bg-base-200 p-5 shadow-2xl sm:p-7"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-base-300 pb-4">
+              <div className="min-w-0 space-y-1">
+                <h2 id="ai-writer-title" className="text-lg font-bold">
+                  AI Message Writer
+                </h2>
+                <p className="text-xs leading-relaxed text-base-content/60">
+                  Generated text stays editable until you insert or send it.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiWriterOpen(false)}
+                className="btn btn-sm btn-ghost btn-square shrink-0"
+                aria-label="Close writer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <label className="form-control"><span className="label-text text-xs mb-1">Your instruction</span><textarea value={aiWriterInstruction} onChange={(event) => setAiWriterInstruction(event.target.value)} maxLength={2000} rows={2} placeholder={aiWriterAction === 'translate' ? 'Translate into Spanish' : 'What should the message say?'} className="textarea textarea-bordered w-full" /></label>
-            <label className="form-control"><span className="label-text text-xs mb-1">Message to work from</span><textarea value={aiWriterText} onChange={(event) => setAiWriterText(event.target.value)} maxLength={12000} rows={4} placeholder="Type or paste a draft, or leave blank to write from scratch." className="textarea textarea-bordered w-full" /></label>
-            <div className="flex justify-end"><button type="button" onClick={() => void handleGenerateWriterText()} disabled={aiWorking || !aiWriterInstruction.trim()} className="btn btn-primary btn-sm gap-2">{aiWorking ? <span className="loading loading-spinner loading-xs" /> : <WandSparkles className="w-4 h-4" />}{aiWorking ? 'Writing…' : 'Generate'}</button></div>
-            {aiWriterText && <><label className="form-control"><span className="label-text text-xs mb-1">Generated message (editable)</span><textarea value={aiWriterText} onChange={(event) => setAiWriterText(event.target.value)} rows={5} className="textarea textarea-bordered w-full" /></label><div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => void navigator.clipboard.writeText(aiWriterText).then(() => toast.success('Copied to clipboard.')).catch(() => toast.error('Clipboard access is unavailable.'))} className="btn btn-sm btn-ghost gap-1"><Copy className="w-4 h-4" />Copy</button><button type="button" onClick={() => { handleComposerChange(aiWriterText); setAiWriterOpen(false); }} className="btn btn-sm btn-outline">Insert in composer</button><button type="button" onClick={() => void handleSendAIText(aiWriterText)} disabled={!activeConversationId} className="btn btn-sm btn-primary gap-1"><Send className="w-4 h-4" />Send</button></div></>}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="block space-y-2">
+                <span className="label-text text-xs font-medium">Action</span>
+                <select
+                  className="select select-bordered w-full"
+                  value={aiWriterAction}
+                  onChange={(event) =>
+                    setAiWriterAction(event.target.value as typeof aiWriterAction)
+                  }
+                >
+                  <option value="write">Write a message</option>
+                  <option value="rewrite">Rewrite</option>
+                  <option value="grammar">Correct grammar</option>
+                  <option value="shorten">Shorten</option>
+                  <option value="expand">Expand</option>
+                  <option value="translate">Translate</option>
+                </select>
+              </label>
+              <label className="block space-y-2">
+                <span className="label-text text-xs font-medium">Tone</span>
+                <select
+                  className="select select-bordered w-full"
+                  value={aiWriterTone}
+                  onChange={(event) =>
+                    setAiWriterTone(event.target.value as typeof aiWriterTone)
+                  }
+                >
+                  <option>friendly</option>
+                  <option>professional</option>
+                  <option>casual</option>
+                  <option>romantic</option>
+                  <option>funny</option>
+                  <option>formal</option>
+                </select>
+              </label>
+            </div>
+
+            <label className="block space-y-2">
+              <span className="label-text text-xs font-medium">Your instruction</span>
+              <textarea
+                value={aiWriterInstruction}
+                onChange={(event) => setAiWriterInstruction(event.target.value)}
+                maxLength={2000}
+                rows={3}
+                placeholder={
+                  aiWriterAction === 'translate'
+                    ? 'Translate into Spanish'
+                    : 'What should the message say?'
+                }
+                className="textarea textarea-bordered min-h-24 w-full resize-y leading-relaxed"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="label-text text-xs font-medium">Message to work from</span>
+              <textarea
+                value={aiWriterText}
+                onChange={(event) => setAiWriterText(event.target.value)}
+                maxLength={12000}
+                rows={4}
+                placeholder="Type or paste a draft, or leave blank to write from scratch."
+                className="textarea textarea-bordered min-h-32 w-full resize-y leading-relaxed"
+              />
+            </label>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => void handleGenerateWriterText()}
+                disabled={aiWorking || !aiWriterInstruction.trim()}
+                className="btn btn-primary gap-2"
+              >
+                {aiWorking ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <WandSparkles className="w-4 h-4" />
+                )}
+                {aiWorking ? 'Writing…' : 'Generate'}
+              </button>
+            </div>
+
+            {aiWriterText && (
+              <div className="space-y-4 border-t border-base-300 pt-5">
+                <label className="block space-y-2">
+                  <span className="label-text text-xs font-medium">
+                    Generated message (editable)
+                  </span>
+                  <textarea
+                    value={aiWriterText}
+                    onChange={(event) => setAiWriterText(event.target.value)}
+                    rows={5}
+                    className="textarea textarea-bordered min-h-36 w-full resize-y leading-relaxed"
+                  />
+                </label>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void navigator.clipboard
+                        .writeText(aiWriterText)
+                        .then(() => toast.success('Copied to clipboard.'))
+                        .catch(() => toast.error('Clipboard access is unavailable.'))
+                    }
+                    className="btn btn-sm btn-ghost gap-1"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleComposerChange(aiWriterText);
+                      setAiWriterOpen(false);
+                    }}
+                    className="btn btn-sm btn-outline"
+                  >
+                    Insert in composer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSendAIText(aiWriterText)}
+                    disabled={!activeConversationId}
+                    className="btn btn-sm btn-primary gap-1"
+                  >
+                    <Send className="w-4 h-4" />
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {aiStickerOpen && (
-        <div role="dialog" aria-modal="true" aria-labelledby="ai-sticker-title" className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-3 sm:p-6" onClick={() => !aiWorking && setAiStickerOpen(false)}>
-          <div className="bg-base-200 border border-base-300 rounded-2xl p-4 sm:p-6 w-full max-w-xl max-h-[92vh] overflow-y-auto space-y-4" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between"><div><h2 id="ai-sticker-title" className="text-lg font-bold">AI Sticker &amp; Avatar Maker</h2><p className="text-xs text-base-content/60">Describe the subject and choose an art style.</p></div><button type="button" onClick={() => setAiStickerOpen(false)} className="btn btn-sm btn-ghost btn-square" aria-label="Close sticker maker"><X className="w-4 h-4" /></button></div>
-            <label className="form-control"><span className="label-text text-xs mb-1">Style</span><select className="select select-bordered select-sm" value={aiStickerStyle} onChange={(event) => setAiStickerStyle(event.target.value as typeof aiStickerStyle)}><option value="cartoon">Cartoon</option><option value="anime">Anime</option><option value="3d">3D</option><option value="realistic">Realistic avatar</option></select></label>
-            <label className="form-control"><span className="label-text text-xs mb-1">Prompt</span><textarea value={aiStickerPrompt} onChange={(event) => setAiStickerPrompt(event.target.value)} maxLength={1500} rows={3} placeholder="A cheerful astronaut cat waving hello" className="textarea textarea-bordered w-full" /></label>
-            <div className="flex justify-end"><button type="button" onClick={() => void handleGenerateSticker()} disabled={aiWorking || aiStickerPrompt.trim().length < 3} className="btn btn-primary btn-sm gap-2">{aiWorking ? <span className="loading loading-spinner loading-xs" /> : <ImagePlus className="w-4 h-4" />}{aiWorking ? 'Generating…' : 'Generate image'}</button></div>
-            {aiStickerImage && <div className="space-y-3"><div className="rounded-xl bg-base-100 border border-base-300 p-3 flex justify-center"><img src={aiStickerImage} alt="AI generated sticker preview" className="max-h-80 max-w-full object-contain" /></div><div className="flex flex-wrap justify-end gap-2"><a href={aiStickerImage} download={aiStickerImage.startsWith('data:image/jpeg') ? 'chatsphere-sticker.jpg' : 'chatsphere-sticker.png'} className="btn btn-sm btn-ghost gap-1"><Download className="w-4 h-4" />Download</a><button type="button" onClick={async () => { try { const response = await fetch(aiStickerImage); const blob = await response.blob(); const extension = blob.type === 'image/jpeg' ? 'jpg' : 'png'; const file = new File([blob], `chatsphere-sticker-${Date.now()}.${extension}`, { type: blob.type || 'image/png' }); await startUploadTask(file, false); setAiStickerOpen(false); toast.success('Sticker added to the chat composer.'); } catch (error) { toast.error(extractApiError(error).message); } }} disabled={!activeConversationId} className="btn btn-sm btn-primary gap-1"><ImagePlus className="w-4 h-4" />Use in chat</button></div></div>}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-sticker-title"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-3 sm:p-6"
+          onClick={() => !aiWorking && setAiStickerOpen(false)}
+        >
+          <div
+            className="my-auto max-h-[92vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-2xl border border-base-300 bg-base-200 p-5 shadow-2xl sm:p-7"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-base-300 pb-4">
+              <div className="min-w-0 space-y-1">
+                <h2 id="ai-sticker-title" className="text-lg font-bold">
+                  AI Sticker &amp; Avatar Maker
+                </h2>
+                <p className="text-xs leading-relaxed text-base-content/60">
+                  Describe the subject and choose an art style.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiStickerOpen(false)}
+                className="btn btn-sm btn-ghost btn-square shrink-0"
+                aria-label="Close sticker maker"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <label className="block space-y-2">
+              <span className="label-text text-xs font-medium">Style</span>
+              <select
+                className="select select-bordered w-full"
+                value={aiStickerStyle}
+                onChange={(event) =>
+                  setAiStickerStyle(event.target.value as typeof aiStickerStyle)
+                }
+              >
+                <option value="cartoon">Cartoon</option>
+                <option value="anime">Anime</option>
+                <option value="3d">3D</option>
+                <option value="realistic">Realistic avatar</option>
+              </select>
+            </label>
+
+            <label className="block space-y-2">
+              <span className="label-text text-xs font-medium">Prompt</span>
+              <textarea
+                value={aiStickerPrompt}
+                onChange={(event) => setAiStickerPrompt(event.target.value)}
+                maxLength={1500}
+                rows={4}
+                placeholder="A cheerful astronaut cat waving hello"
+                className="textarea textarea-bordered min-h-28 w-full resize-y leading-relaxed"
+              />
+            </label>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => void handleGenerateSticker()}
+                disabled={aiWorking || aiStickerPrompt.trim().length < 3}
+                className="btn btn-primary gap-2"
+              >
+                {aiWorking ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <ImagePlus className="w-4 h-4" />
+                )}
+                {aiWorking ? 'Generating…' : 'Generate image'}
+              </button>
+            </div>
+
+            {aiStickerImage && (
+              <div className="space-y-4 border-t border-base-300 pt-5">
+                <div className="flex justify-center rounded-xl border border-base-300 bg-base-100 p-3">
+                  <img
+                    src={aiStickerImage}
+                    alt="AI generated sticker preview"
+                    className="max-h-80 max-w-full object-contain"
+                  />
+                </div>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <a
+                    href={aiStickerImage}
+                    download={
+                      aiStickerImage.startsWith('data:image/jpeg')
+                        ? 'chatsphere-sticker.jpg'
+                        : 'chatsphere-sticker.png'
+                    }
+                    className="btn btn-sm btn-ghost gap-1"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </a>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(aiStickerImage);
+                        const blob = await response.blob();
+                        const extension = blob.type === 'image/jpeg' ? 'jpg' : 'png';
+                        const file = new File(
+                          [blob],
+                          `chatsphere-sticker-${Date.now()}.${extension}`,
+                          { type: blob.type || 'image/png' }
+                        );
+                        await startUploadTask(file, false);
+                        setAiStickerOpen(false);
+                        toast.success('Sticker added to the chat composer.');
+                      } catch (error) {
+                        toast.error(extractApiError(error).message);
+                      }
+                    }}
+                    disabled={!activeConversationId}
+                    className="btn btn-sm btn-primary gap-1"
+                  >
+                    <ImagePlus className="w-4 h-4" />
+                    Use in chat
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

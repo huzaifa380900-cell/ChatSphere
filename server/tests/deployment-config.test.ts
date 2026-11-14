@@ -5,6 +5,7 @@ import { loadAndValidateEnv } from '../src/config/env.ts';
 interface VercelConfig {
   services?: unknown;
   outputDirectory?: string;
+  cleanUrls?: boolean;
   functions?: Record<string, { includeFiles?: string; maxDuration?: number }>;
   rewrites?: Array<{ source: string; destination: string }>;
 }
@@ -72,6 +73,7 @@ describe('production deployment configuration', () => {
     expect(packageConfig.type).toBe('module');
     expect(config.services).toBeUndefined();
     expect(config.outputDirectory).toBe('client/out');
+    expect(config.cleanUrls).toBe(true);
     expect(config.functions?.['api/handler.ts']?.includeFiles).toBe('server/dist/**');
     expect(config.functions?.['api/handler.ts']?.maxDuration).toBe(60);
     expect(apiHandler).toContain(
@@ -81,10 +83,7 @@ describe('production deployment configuration', () => {
       source: '/api/:path*',
       destination: '/api/handler?__path=:path*',
     });
-    expect(config.rewrites).toContainEqual({
-      source: '/:path((?!api/).*)',
-      destination: '/index.html',
-    });
+    expect(config.rewrites).toHaveLength(1);
   });
 
   it('rejects missing PostgreSQL URLs and signing secrets in production', () => {

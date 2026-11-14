@@ -18,6 +18,7 @@ import type {
   ConversationItem,
   MessageAttachmentItem,
   NotificationItem,
+  PublicUserSummary,
   ReceiptStatus,
 } from '../types/models.ts';
 
@@ -93,6 +94,63 @@ function sortConversations(list: ConversationItem[]): ConversationItem[] {
   });
 }
 
+function preserveLivePresence(
+  incoming: PublicUserSummary['presence'],
+  previous: PublicUserSummary['presence']
+): PublicUserSummary['presence'] {
+  if (
+    !incoming ||
+    incoming.lastSeenAt === null ||
+    !previous ||
+    previous.lastSeenAt === null
+  ) {
+    return incoming;
+  }
+  return {
+    ...incoming,
+    isOnline: previous.isOnline,
+    lastSeenAt: previous.lastSeenAt,
+  };
+}
+
+function mergeConversationPresence(
+  incoming: ConversationItem,
+  previous: ConversationItem | undefined
+): ConversationItem {
+  if (!previous) return incoming;
+
+  const directPeer =
+    incoming.directPeer && previous.directPeer?.id === incoming.directPeer.id
+      ? {
+          ...incoming.directPeer,
+          presence: preserveLivePresence(
+            incoming.directPeer.presence,
+            previous.directPeer.presence
+          ),
+        }
+      : incoming.directPeer;
+  const previousMembers = new Map(previous.members.map((member) => [member.userId, member]));
+
+  return {
+    ...incoming,
+    directPeer,
+    members: incoming.members.map((member) => {
+      const previousMember = previousMembers.get(member.userId);
+      if (!previousMember) return member;
+      return {
+        ...member,
+        user: {
+          ...member.user,
+          presence: preserveLivePresence(
+            member.user.presence,
+            previousMember.user.presence
+          ),
+        },
+      };
+    }),
+  };
+}
+
 export function ChatRealtimeProvider({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const pusherRef = useRef<Pusher | null>(null);
@@ -127,7 +185,14 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
         success: boolean;
         data: { conversations: ConversationItem[] };
       }>('/conversations');
-      setConversations(sortConversations(res.data.data.conversations));
+      setConversations((current) => {
+        const currentById = new Map(current.map((conversation) => [conversation.id, conversation]));
+        return sortConversations(
+          res.data.data.conversations.map((conversation) =>
+            mergeConversationPresence(conversation, currentById.get(conversation.id))
+          )
+        );
+      });
     } catch {
       // Handled gracefully by callers
     } finally {
@@ -528,8 +593,10 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
 
     const handleConversationCreated = ({ conversation }: { conversation: ConversationItem }) => {
       setConversations((prev) => {
-        const filtered = prev.filter((c) => c.id !== conversation.id);
-        return sortConversations([conversation, ...filtered]);
+        const existing = prev.find((item) => item.id === conversation.id);
+        const updated = mergeConversationPresence(conversation, existing);
+        const filtered = prev.filter((item) => item.id !== conversation.id);
+        return sortConversations([updated, ...filtered]);
       });
     };
 
@@ -608,6 +675,9 @@ export function ChatRealtimeProvider({ children }: { children: React.ReactNode }
           break;
         case 'notification:new':
           handleNotificationNew(payload as { notification: NotificationItem });
+          break;
+        case 'notification:refresh':
+          void refreshNotifications();
           break;
       }
     };
