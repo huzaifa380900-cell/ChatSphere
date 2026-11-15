@@ -82,10 +82,10 @@ function AuthCardLayout({
 }) {
   return (
     <PageThemeScope>
-    <div className="auth-page min-h-screen bg-[#080E1A] text-slate-100 flex flex-col justify-between px-4 py-8 relative overflow-hidden">
+    <div className="auth-page min-h-screen bg-[#080F0D] text-slate-100 flex flex-col justify-between px-4 py-8 relative overflow-hidden">
       {/* Background blobs */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-cyan-600/6 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-indigo-600/6 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-600/6 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-green-600/6 rounded-full blur-3xl pointer-events-none" />
       {/* Grid overlay */}
       <div
         className="absolute inset-0 opacity-[0.012] pointer-events-none"
@@ -163,11 +163,11 @@ function AuthInput({
       </label>
       <div
         className={`relative rounded-xl transition-all duration-200 ${
-          focused ? 'ring-1 ring-cyan-500/60 shadow-lg shadow-cyan-500/10' : ''
+          focused ? 'ring-1 ring-emerald-500/60 shadow-lg shadow-emerald-500/10' : ''
         }`}
       >
         {Icon && (
-          <Icon className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused ? 'text-cyan-400' : 'text-slate-500'}`} />
+          <Icon className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused ? 'text-emerald-400' : 'text-slate-500'}`} />
         )}
         <input
           id={id}
@@ -201,7 +201,7 @@ function AuthSubmitButton({ loading, children }: { loading: boolean; children: R
       disabled={loading}
       whileHover={!loading ? { scale: 1.02 } : {}}
       whileTap={!loading ? { scale: 0.97 } : {}}
-      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 font-semibold text-sm shadow-lg shadow-cyan-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-800 hover:to-green-800 text-white font-semibold text-sm shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
     >
       {loading ? (
         <span className="flex items-center justify-center gap-2">
@@ -314,7 +314,7 @@ export function LoginPage() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label htmlFor="login-password" className="text-xs font-medium text-slate-300">Password</label>
-            <AppLink href="/forgot-password" className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
+            <AppLink href="/forgot-password" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">
               Forgot password?
             </AppLink>
           </div>
@@ -342,7 +342,7 @@ export function LoginPage() {
 
       <p className="text-xs text-center text-slate-500">
         New to ChatSphere?{' '}
-        <AppLink href="/register" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
+        <AppLink href="/register" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
           Create an account
         </AppLink>
       </p>
@@ -461,7 +461,7 @@ export function RegisterPage() {
 
       <p className="text-xs text-center text-slate-500">
         Already have an account?{' '}
-        <AppLink href="/login" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
+        <AppLink href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
           Sign in
         </AppLink>
       </p>
@@ -567,8 +567,8 @@ export function VerifyEmailPage() {
       subtitle="Enter the 6-digit one-time verification code sent to your inbox."
     >
       {sandboxHint?.code && (
-        <div className="p-3.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-xs space-y-1.5">
-          <p className="font-semibold text-cyan-300">
+        <div className="p-3.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs space-y-1.5">
+          <p className="font-semibold text-emerald-300">
             Development Mail Sink (SMTP not configured in environment)
           </p>
           <p className="text-slate-300">
@@ -576,7 +576,7 @@ export function VerifyEmailPage() {
             <button
               type="button"
               onClick={() => setValue('otp', sandboxHint.code || '')}
-              className="font-mono font-bold text-cyan-300 underline cursor-pointer"
+              className="font-mono font-bold text-emerald-300 underline cursor-pointer"
             >
               {sandboxHint.code}
             </button>{' '}
@@ -587,7 +587,7 @@ export function VerifyEmailPage() {
               href={sandboxHint.previewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-cyan-400 underline inline-block"
+              className="text-emerald-400 underline inline-block"
             >
               Open Ethereal Email Preview
             </a>
@@ -604,7 +604,7 @@ export function VerifyEmailPage() {
             id="otp-email"
             type="email"
             {...register('email')}
-            className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-cyan-500"
+            className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
           />
           {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
         </div>
@@ -620,7 +620,7 @@ export function VerifyEmailPage() {
             maxLength={6}
             placeholder="123456"
             {...register('otp')}
-            className="w-full px-4 py-3 text-center tracking-[0.5em] font-mono text-xl rounded-lg bg-slate-950 border border-slate-800 text-cyan-300 focus:outline-none focus:border-cyan-500 tabular-nums"
+            className="w-full px-4 py-3 text-center tracking-[0.5em] font-mono text-xl rounded-lg bg-slate-950 border border-slate-800 text-emerald-300 focus:outline-none focus:border-emerald-500 tabular-nums"
           />
           {errors.otp && <p className="text-xs text-red-400 mt-1">{errors.otp.message}</p>}
         </div>
@@ -628,7 +628,7 @@ export function VerifyEmailPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-2.5 px-4 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition-colors cursor-pointer disabled:opacity-60"
+          className="w-full py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm transition-colors cursor-pointer disabled:opacity-60"
         >
           {isSubmitting ? 'Verifying...' : 'Verify & Activate Account'}
         </button>
@@ -640,7 +640,7 @@ export function VerifyEmailPage() {
           type="button"
           onClick={() => void handleResend()}
           disabled={cooldown > 0 || resending}
-          className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 disabled:text-slate-500 font-medium tabular-nums cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 disabled:text-slate-500 font-medium tabular-nums cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
           <span>{cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend Code'}</span>
@@ -695,8 +695,8 @@ export function ForgotPasswordPage() {
           </div>
 
           {devResetToken && (
-            <div className="p-3.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-xs space-y-2">
-              <p className="font-semibold text-cyan-300">
+            <div className="p-3.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs space-y-2">
+              <p className="font-semibold text-emerald-300">
                 Development Mail Sink (SMTP not configured)
               </p>
               <button
@@ -730,7 +730,7 @@ export function ForgotPasswordPage() {
               autoComplete="email"
               placeholder="name@company.com"
               {...register('email')}
-              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
             />
             {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
           </div>
@@ -738,14 +738,14 @@ export function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 px-4 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition-colors cursor-pointer disabled:opacity-60"
+            className="w-full py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm transition-colors cursor-pointer disabled:opacity-60"
           >
             {isSubmitting ? 'Sending instructions...' : 'Send Reset Link'}
           </button>
 
           <p className="text-xs text-center text-slate-400">
             Remembered your password?{' '}
-            <AppLink href="/login" className="text-cyan-400 hover:text-cyan-300 font-medium">
+            <AppLink href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium">
               Sign in
             </AppLink>
           </p>
@@ -798,7 +798,7 @@ export function ResetPasswordPage() {
           </div>
           <AppLink
             href="/forgot-password"
-            className="block w-full text-center py-2.5 px-4 rounded-lg bg-cyan-500 text-slate-950 font-semibold text-sm"
+            className="block w-full text-center py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm transition-colors"
           >
             Request New Reset Link
           </AppLink>
@@ -815,7 +815,7 @@ export function ResetPasswordPage() {
               autoComplete="new-password"
               placeholder="Min 8 chars, upper, lower & number"
               {...register('newPassword')}
-              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
             />
             {errors.newPassword && (
               <p className="text-xs text-red-400 mt-1">{errors.newPassword.message}</p>
@@ -835,7 +835,7 @@ export function ResetPasswordPage() {
               autoComplete="new-password"
               placeholder="Re-enter your new password"
               {...register('confirmPassword')}
-              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
             />
             {errors.confirmPassword && (
               <p className="text-xs text-red-400 mt-1">{errors.confirmPassword.message}</p>
@@ -845,7 +845,7 @@ export function ResetPasswordPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 px-4 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition-colors cursor-pointer disabled:opacity-60"
+            className="w-full py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm transition-colors cursor-pointer disabled:opacity-60"
           >
             {isSubmitting ? 'Updating password...' : 'Save New Password'}
           </button>
@@ -891,14 +891,14 @@ export function GoogleCallbackPage() {
           </p>
           <AppLink
             href="/login"
-            className="block w-full text-center py-2.5 px-4 rounded-lg bg-cyan-500 text-slate-950 font-semibold text-sm"
+            className="block w-full text-center py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm transition-colors"
           >
             Back to Sign In
           </AppLink>
         </div>
       ) : (
         <div className="flex items-center justify-center py-8">
-          <span className="loading loading-spinner loading-md text-cyan-400" />
+          <span className="loading loading-spinner loading-md text-emerald-400" />
         </div>
       )}
     </AuthCardLayout>

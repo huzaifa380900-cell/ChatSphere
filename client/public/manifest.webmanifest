@@ -5,8 +5,8 @@
   "start_url": "/chat",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0B1120",
-  "theme_color": "#0B1120",
+  "background_color": "#080F0D",
+  "theme_color": "#080F0D",
   "icons": [
     {
       "src": "/icons/chatsphere-192.png",

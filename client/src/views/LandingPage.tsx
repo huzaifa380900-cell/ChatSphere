@@ -91,8 +91,8 @@ function FloatingBubble({
       <div
         className={`px-3.5 py-2 rounded-2xl text-xs font-medium shadow-xl max-w-[180px] ${
           variant === 'sent'
-            ? 'bg-cyan-500/20 border border-cyan-400/30 text-cyan-100 rounded-br-sm'
-            : 'bg-indigo-500/20 border border-indigo-400/30 text-indigo-100 rounded-bl-sm'
+            ? 'bg-emerald-500/20 border border-emerald-400/30 text-emerald-100 rounded-br-sm'
+            : 'bg-green-500/20 border border-green-400/30 text-green-100 rounded-bl-sm'
         }`}
       >
         {children}
@@ -106,8 +106,8 @@ function HeroGraphic() {
   return (
     <div className="relative w-full h-[440px] lg:h-[520px]">
       {/* Glow blobs */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main chat window mockup */}
       <motion.div
@@ -124,7 +124,7 @@ function HeroGraphic() {
             <div className="w-2.5 h-2.5 rounded-full bg-green-400/70" />
           </div>
           <div className="flex-1 flex items-center justify-center gap-2">
-            <div className="relative w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center text-white text-[9px] font-bold">
+            <div className="relative w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white text-[9px] font-bold">
               E
               <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-400 ring-1 ring-black/30" />
             </div>
@@ -151,14 +151,14 @@ function HeroGraphic() {
               )}
               <div className={`max-w-[75%] px-3 py-2 rounded-xl text-[11px] leading-relaxed ${
                 msg.align === 'right'
-                  ? 'bg-cyan-500/20 border border-cyan-400/25 text-cyan-50 rounded-br-sm'
+                  ? 'bg-emerald-500/20 border border-emerald-400/25 text-emerald-50 rounded-br-sm'
                   : 'bg-white/6 border border-white/8 text-slate-200 rounded-bl-sm'
               }`}>
                 <p>{msg.text}</p>
                 <div className="flex items-center justify-end gap-1 mt-1 opacity-60">
                   <span className="text-[9px] font-mono">{msg.time}</span>
                   {msg.align === 'right' && (
-                    msg.read ? <CheckCheck className="w-2.5 h-2.5 text-cyan-300" /> : <Check className="w-2.5 h-2.5" />
+                    msg.read ? <CheckCheck className="w-2.5 h-2.5 text-emerald-300" /> : <Check className="w-2.5 h-2.5" />
                   )}
                 </div>
               </div>
@@ -184,7 +184,7 @@ function HeroGraphic() {
         {/* Composer */}
         <div className="absolute bottom-0 inset-x-0 p-3 border-t border-white/5 bg-black/20 flex items-center gap-2">
           <div className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-[11px] text-white/40">Type a message…</div>
-          <button className="w-7 h-7 rounded-lg bg-cyan-500 flex items-center justify-center shrink-0">
+          <button className="w-7 h-7 rounded-lg bg-emerald-700 flex items-center justify-center shrink-0">
             <Send className="w-3 h-3 text-white" />
           </button>
         </div>
@@ -324,7 +324,7 @@ function WorkspacePreview() {
             onClick={() => setTab(t)}
             className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer ${
               tab === t
-                ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20'
+                ? 'bg-emerald-700 text-white shadow-lg shadow-emerald-700/20'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -342,7 +342,7 @@ function WorkspacePreview() {
               type="button"
               onClick={() => setTab(t)}
               className={`w-full text-left p-3 rounded-xl transition-all duration-200 cursor-pointer ${
-                tab === t ? 'bg-cyan-500/10 border border-cyan-500/25' : 'hover:bg-white/4 border border-transparent'
+                tab === t ? 'bg-emerald-500/10 border border-emerald-500/25' : 'hover:bg-white/4 border border-transparent'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
@@ -389,7 +389,7 @@ function WorkspacePreview() {
                   )}
                   <div className={`max-w-[80%] px-3.5 py-2.5 rounded-xl space-y-1.5 text-xs ${
                     msg.side === 'right'
-                      ? 'bg-cyan-500/15 border border-cyan-500/25 text-cyan-50 rounded-br-sm'
+                      ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-50 rounded-br-sm'
                       : 'bg-white/5 border border-white/8 text-slate-200 rounded-bl-sm'
                   }`}>
                     {msg.side === 'left' && (
@@ -398,14 +398,14 @@ function WorkspacePreview() {
                     <p>{msg.text}</p>
                     {'hasFile' in msg && msg.hasFile && (
                       <div className="flex items-center gap-2 p-2 rounded-lg bg-black/20 border border-white/8 text-[10px]">
-                        <FileText className="w-3 h-3 text-cyan-400 shrink-0" />
+                        <FileText className="w-3 h-3 text-emerald-400 shrink-0" />
                         <span className="truncate text-slate-300">neon-audit.pdf</span>
                         <span className="text-slate-500 ml-auto font-mono">1.8 MB</span>
                       </div>
                     )}
                     {'hasVoice' in msg && msg.hasVoice && (
                       <div className="flex items-center gap-2 p-2 rounded-lg bg-black/20 border border-white/8 text-[10px]">
-                        <Mic className="w-3 h-3 text-teal-400 shrink-0" />
+                        <Mic className="w-3 h-3 text-emerald-400 shrink-0" />
                         <span className="text-slate-300">Voice note · 0:42</span>
                       </div>
                     )}
@@ -413,7 +413,7 @@ function WorkspacePreview() {
                       <span className="font-mono text-[9px]">{msg.time}</span>
                       {msg.side === 'right' && (
                         'read' in msg && msg.read
-                          ? <CheckCheck className="w-2.5 h-2.5 text-cyan-300" />
+                          ? <CheckCheck className="w-2.5 h-2.5 text-emerald-300" />
                           : <Check className="w-2.5 h-2.5" />
                       )}
                     </div>
@@ -433,7 +433,7 @@ function FeaturesHeader() {
   const { ref, inView } = useScrollReveal();
   return (
     <motion.div ref={ref} variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} className="max-w-2xl">
-      <p className="text-xs font-semibold text-cyan-400 uppercase tracking-widest mb-3">What's inside</p>
+      <p className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-3">What's inside</p>
       <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Complete messaging &amp; administration stack</h2>
       <p className="text-slate-400 mt-4 leading-relaxed">Every workflow runs against real database transactions, authenticated Pusher events, and server-authorized cloud storage.</p>
     </motion.div>
@@ -444,7 +444,7 @@ function PreviewHeader() {
   const { ref, inView } = useScrollReveal();
   return (
     <motion.div ref={ref} variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} className="max-w-2xl">
-      <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-3">Live workspace</p>
+      <p className="text-xs font-semibold text-green-400 uppercase tracking-widest mb-3">Live workspace</p>
       <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Built for direct and group communication</h2>
       <p className="text-slate-400 mt-4 leading-relaxed">Inspect read receipts, threaded replies, voice notes, and signed attachments inside the live workspace.</p>
     </motion.div>
@@ -455,8 +455,8 @@ function SecuritySection({ user, navigate }: { user: ReturnType<typeof useAuth>[
   const { ref, inView } = useScrollReveal();
   return (
     <motion.div ref={ref} initial="hidden" animate={inView ? 'visible' : 'hidden'} className="glass-card rounded-3xl p-8 sm:p-12 lg:p-16 overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/8 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-indigo-500/8 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/8 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-72 h-72 bg-green-500/8 rounded-full blur-3xl pointer-events-none" />
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <div className="space-y-8">
           <motion.div variants={fadeUp} custom={0}>
@@ -482,7 +482,7 @@ function SecuritySection({ user, navigate }: { user: ReturnType<typeof useAuth>[
             ))}
           </motion.div>
           <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-3 pt-2">
-            <motion.button suppressHydrationWarning type="button" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => navigate(user ? '/chat' : '/register')} className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 rounded-xl shadow-lg shadow-cyan-500/20 cursor-pointer">
+            <motion.button suppressHydrationWarning type="button" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => navigate(user ? '/chat' : '/register')} className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-800 hover:to-green-800 text-white rounded-xl shadow-lg shadow-emerald-500/20 cursor-pointer transition-colors">
               {user ? 'Open Workspace' : 'Create Free Account'}
             </motion.button>
             <AppLink href="/login" className="px-5 py-3 text-sm font-medium text-slate-300 hover:text-white border border-white/10 hover:border-white/20 rounded-xl transition-colors">Sign in</AppLink>
@@ -517,7 +517,7 @@ function FinalCta({ user, navigate }: { user: ReturnType<typeof useAuth>['user']
       <h2 className="text-4xl sm:text-5xl font-bold text-white leading-tight">Ready to build on a <span className="gradient-text">secure foundation</span>?</h2>
       <p className="text-lg text-slate-400">Production-grade real-time messaging. No config required. Start in seconds.</p>
       <div className="flex flex-wrap justify-center gap-4">
-        <motion.button suppressHydrationWarning type="button" whileHover={{ scale: 1.04, boxShadow: '0 0 40px rgba(6,182,212,0.4)' }} whileTap={{ scale: 0.96 }} onClick={() => navigate(user ? '/chat' : '/register')} className="group px-8 py-4 text-base font-semibold bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 rounded-xl shadow-2xl shadow-cyan-500/25 inline-flex items-center gap-2 cursor-pointer">
+        <motion.button suppressHydrationWarning type="button" whileHover={{ scale: 1.04, boxShadow: '0 0 40px rgba(16,185,129,0.4)' }} whileTap={{ scale: 0.96 }} onClick={() => navigate(user ? '/chat' : '/register')} className="group px-8 py-4 text-base font-semibold bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-800 hover:to-green-800 text-white rounded-xl shadow-2xl shadow-emerald-500/25 inline-flex items-center gap-2 cursor-pointer transition-colors">
           <span suppressHydrationWarning>{user ? 'Go to ChatSphere' : 'Create Free Account'}</span>
           <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
         </motion.button>
@@ -594,7 +594,7 @@ function LandingPageContent() {
   ];
 
   return (
-    <div className="landing-page min-h-screen bg-[#080E1A] text-slate-100 flex flex-col overflow-x-hidden">
+    <div className="landing-page min-h-screen bg-[#080F0D] text-slate-100 flex flex-col overflow-x-hidden">
 
       {/* ── Sticky Header ──────────────────────────────────────────────────── */}
       <motion.header
@@ -640,7 +640,7 @@ function LandingPageContent() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate(user ? '/chat' : '/register')}
-              className="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 rounded-xl shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-shadow cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-800 hover:to-green-800 text-white rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all cursor-pointer"
             >
               {user ? 'Launch Chat' : 'Get Started Free'}
             </motion.button>
@@ -669,7 +669,7 @@ function LandingPageContent() {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="md:hidden overflow-hidden border-t border-white/5 bg-[#080E1A]/95 backdrop-blur-xl"
+              className="md:hidden overflow-hidden border-t border-white/5 bg-[#080F0D]/95 backdrop-blur-xl"
             >
               <div className="px-5 py-4 flex flex-col gap-3">
                 <PageThemeSwitch />
@@ -691,7 +691,7 @@ function LandingPageContent() {
                     suppressHydrationWarning
                     type="button"
                     onClick={() => { navigate(user ? '/chat' : '/register'); setMobileMenuOpen(false); }}
-                    className="w-full py-2.5 text-sm font-semibold bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 rounded-xl cursor-pointer"
+                    className="w-full py-2.5 text-sm font-semibold bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-800 hover:to-green-800 text-white rounded-xl cursor-pointer transition-colors"
                   >
                     {user ? 'Launch Chat' : 'Get Started Free'}
                   </button>
@@ -706,9 +706,9 @@ function LandingPageContent() {
       <section ref={heroRef} className="relative min-h-screen flex items-center pt-16 pb-16 px-5 sm:px-8 overflow-hidden">
         {/* Background elements */}
         <div className="absolute inset-0 animated-bg" />
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-cyan-600/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-32 right-0 w-[500px] h-[500px] bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-emerald-600/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-32 right-0 w-[500px] h-[500px] bg-green-600/5 rounded-full blur-3xl pointer-events-none" />
 
         {/* Grid overlay */}
         <div
@@ -763,7 +763,7 @@ function LandingPageContent() {
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => navigate(user ? '/chat' : '/register')}
-                  className="group px-6 py-3.5 text-sm font-semibold bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 rounded-xl shadow-xl shadow-cyan-500/25 inline-flex items-center gap-2 cursor-pointer"
+                  className="group px-6 py-3.5 text-sm font-semibold bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-800 hover:to-green-800 text-white rounded-xl shadow-xl shadow-emerald-500/25 inline-flex items-center gap-2 cursor-pointer transition-colors"
                 >
                   <span suppressHydrationWarning>{user ? 'Open ChatSphere' : 'Start for Free'}</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
@@ -791,7 +791,7 @@ function LandingPageContent() {
               >
                 {['HttpOnly JWT rotation', 'Email OTP + Google OAuth', 'Signed Cloudinary uploads', 'Zero localStorage tokens'].map((t) => (
                   <span key={t} className="flex items-center gap-1.5">
-                    <Check className="w-3 h-3 text-cyan-500" />
+                    <Check className="w-3 h-3 text-emerald-500" />
                     {t}
                   </span>
                 ))}
@@ -838,7 +838,7 @@ function LandingPageContent() {
 
       {/* ── Workspace Preview ───────────────────────────────────────────────── */}
       <section id="preview" className="py-24 px-5 sm:px-8 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-900/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-900/5 to-transparent pointer-events-none" />
         <div className="max-w-7xl mx-auto space-y-12 relative z-10">
           <PreviewHeader />
           <WorkspacePreview />

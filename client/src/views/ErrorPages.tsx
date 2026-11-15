@@ -43,8 +43,8 @@ export function AppErrorScreen({
   onReload?: () => void;
 }) {
   return (
-    <div className="min-h-screen bg-[#0B1120] text-slate-100 flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-[#111827] border border-slate-800 rounded-xl p-8 text-center space-y-5">
+    <div className="min-h-screen bg-[#080F0D] text-slate-100 flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-[#101C18] border border-slate-800 rounded-xl p-8 text-center space-y-5">
         <AlertTriangle className="w-11 h-11 text-amber-400 mx-auto" />
         <div className="space-y-1.5">
           <h1 className="text-xl font-bold text-white">Application error</h1>
@@ -56,7 +56,7 @@ export function AppErrorScreen({
             onReload?.();
             window.location.href = '/';
           }}
-          className="px-5 py-2.5 rounded-lg bg-cyan-500 text-slate-950 font-semibold text-sm cursor-pointer"
+          className="px-5 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm cursor-pointer"
         >
           Reload Application
         </button>

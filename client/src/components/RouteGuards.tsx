@@ -32,9 +32,9 @@ export function ProtectedView({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0B1120] text-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#080F0D] text-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <span className="loading loading-spinner loading-md text-cyan-400" />
+          <span className="loading loading-spinner loading-md text-emerald-400" />
           <p className="text-xs text-slate-400">Verifying secure session...</p>
         </div>
       </div>
@@ -57,8 +57,8 @@ export function GuestOnlyView({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0B1120] text-slate-100 flex items-center justify-center">
-        <span className="loading loading-spinner loading-md text-cyan-400" />
+      <div className="min-h-screen bg-[#080F0D] text-slate-100 flex items-center justify-center">
+        <span className="loading loading-spinner loading-md text-emerald-400" />
       </div>
     );
   }

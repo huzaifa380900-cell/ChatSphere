@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0B1120',
+  themeColor: '#080F0D',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[#0B1120] text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-100">
+      <body className="bg-[#080F0D] text-slate-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-100">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

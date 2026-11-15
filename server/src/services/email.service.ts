@@ -83,12 +83,12 @@ export async function sendVerificationOtpEmail(params: {
   const subject = 'Verify your ChatSphere account';
 
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#0b1120; color:#f8fafc; padding:32px; border-radius:12px; max-width:520px; margin:0 auto;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#080f0d; color:#f8fafc; padding:32px; border-radius:12px; max-width:520px; margin:0 auto;">
       <h2 style="margin:0 0 12px; color:#f8fafc; font-size:20px;">Verify your ChatSphere email</h2>
       <p style="color:#94a3b8; font-size:14px; line-height:1.6;">
         Hello ${params.displayName}, enter the verification code below to activate your account. This code expires in ${params.expiresInMinutes} minutes.
       </p>
-      <div style="margin:24px 0; padding:18px; background:#111827; border:1px solid #1e293b; border-radius:8px; text-align:center; font-family:monospace; font-size:28px; letter-spacing:8px; font-weight:700; color:#22d3ee;">
+      <div style="margin:24px 0; padding:18px; background:#101c18; border:1px solid #23332c; border-radius:8px; text-align:center; font-family:monospace; font-size:28px; letter-spacing:8px; font-weight:700; color:#34d399;">
         ${params.otp}
       </div>
       <p style="color:#64748b; font-size:12px; line-height:1.5;">
@@ -138,13 +138,13 @@ export async function sendPasswordResetEmail(params: {
   const subject = 'Reset your ChatSphere password';
 
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#0b1120; color:#f8fafc; padding:32px; border-radius:12px; max-width:520px; margin:0 auto;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#080f0d; color:#f8fafc; padding:32px; border-radius:12px; max-width:520px; margin:0 auto;">
       <h2 style="margin:0 0 12px; color:#f8fafc; font-size:20px;">Password Reset Request</h2>
       <p style="color:#94a3b8; font-size:14px; line-height:1.6;">
         Hello ${params.displayName}, we received a request to reset your ChatSphere password. Use the button below within ${params.expiresInMinutes} minutes.
       </p>
       <div style="margin:24px 0;">
-        <a href="${params.resetUrl}" style="display:inline-block; background:#06b6d4; color:#082f49; font-weight:600; text-decoration:none; padding:12px 22px; border-radius:8px; font-size:14px;">
+        <a href="${params.resetUrl}" style="display:inline-block; background:#07845d; color:#ffffff; font-weight:600; text-decoration:none; padding:12px 22px; border-radius:8px; font-size:14px;">
           Reset Password
         </a>
       </div>

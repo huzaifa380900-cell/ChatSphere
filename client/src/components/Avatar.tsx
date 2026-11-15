@@ -39,7 +39,7 @@ export function Avatar({
   return (
     <div className={`relative inline-flex shrink-0 select-none ${className}`}>
       <div
-        className={`${s.ring} rounded-full overflow-hidden flex items-center justify-center font-semibold bg-gradient-to-br from-slate-800 to-slate-900 text-cyan-200 border border-white/8`}
+        className={`${s.ring} rounded-full overflow-hidden flex items-center justify-center font-semibold bg-gradient-to-br from-slate-800 to-slate-900 text-emerald-200 border border-white/8`}
       >
         {src && !imgFailed ? (
           <img

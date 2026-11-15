@@ -221,7 +221,9 @@ export function DashboardShell({
                 title={item.label}
                 className={`relative flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   item.active
-                    ? 'bg-primary/15 text-primary shadow-sm'
+                    ? theme === 'light'
+                      ? 'bg-emerald-50 text-emerald-700 shadow-sm'
+                      : 'bg-emerald-500/15 text-emerald-300 shadow-sm'
                     : 'text-base-content/60 hover:bg-white/5 hover:text-base-content'
                 } ${desktopSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
               >
@@ -366,7 +368,9 @@ export function DashboardShell({
                   href={item.href}
                   className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 text-[10px] font-medium transition-colors ${
                     item.active
-                      ? 'bg-primary/10 text-primary'
+                      ? theme === 'light'
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-emerald-500/10 text-emerald-300'
                       : 'text-base-content/60 hover:bg-white/5 hover:text-base-content'
                   }`}
                 >
