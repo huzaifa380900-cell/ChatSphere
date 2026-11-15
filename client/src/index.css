@@ -253,6 +253,11 @@
   min-height: 100vh;
 }
 
+.landing-page button {
+  color: #2E8B57 !important;
+  border: 1px solid #2E8B57 !important;
+}
+
 .page-theme-scope .page-theme-switch {
   display: inline-flex;
   align-items: center;
