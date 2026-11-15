@@ -248,12 +248,225 @@
     scroll-behavior: auto !important;
   }
 }
-/* Global button text and border token, independent of page theme and state. */
+
+/* Landing and authentication themes are scoped to avoid changing app pages. */
+.page-theme-scope {
+  min-height: 100vh;
+}
+
+.page-theme-scope .page-theme-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.75rem;
+  color: inherit;
+  background: rgba(148, 163, 184, 0.08);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  cursor: pointer;
+}
+
+.page-theme-scope .page-theme-switch:hover {
+  background: rgba(148, 163, 184, 0.16);
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.page-theme-scope[data-page-theme="dark"] {
+  color-scheme: dark;
+}
+
+.page-theme-scope[data-page-theme="light"] {
+  color-scheme: light;
+}
+
+.page-theme-scope[data-page-theme="light"] .landing-page,
+.page-theme-scope[data-page-theme="light"] .auth-page {
+  color: #172a25 !important;
+  background-color: #f7faf9 !important;
+}
+
+.page-theme-scope[data-page-theme="light"] [class*="bg-[#080E1A]"] {
+  background-color: rgba(247, 250, 249, 0.96) !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] .landing-page,
+.page-theme-scope[data-page-theme="dark"] .auth-page {
+  color: #e6f0ec !important;
+  background-color: #0b1210 !important;
+}
+
+.page-theme-scope .glass-card {
+  background: rgba(18, 30, 27, 0.78);
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.page-theme-scope[data-page-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(15, 67, 49, 0.12);
+  box-shadow: 0 18px 50px rgba(27, 61, 47, 0.08);
+}
+
+.page-theme-scope[data-page-theme="dark"] .animated-bg {
+  background: linear-gradient(-45deg, #0b1210, #101c18, #0c1915, #080f0d);
+  background-size: 400% 400%;
+}
+
+.page-theme-scope[data-page-theme="light"] .animated-bg {
+  background: linear-gradient(-45deg, #f7faf9, #edf5f1, #f4f8f6, #eaf3ee);
+  background-size: 400% 400%;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(.text-white, .text-slate-100, .text-slate-200, .text-slate-300) {
+  color: #1d302a !important;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(.text-slate-400, .text-slate-500) {
+  color: #5b6e66 !important;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(.text-slate-600, .text-slate-700) {
+  color: #73847d !important;
+}
+
+.page-theme-scope[data-page-theme="light"] [class*="text-white/"] {
+  color: rgba(29, 48, 42, 0.72) !important;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(
+  .text-cyan-100,
+  .text-cyan-200,
+  .text-cyan-300,
+  .text-cyan-400,
+  .text-cyan-500,
+  .text-indigo-100,
+  .text-indigo-300,
+  .text-indigo-400,
+  .text-teal-400,
+  .text-emerald-300,
+  .text-emerald-400
+) {
+  color: #087653 !important;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(.text-red-400, .text-red-500) {
+  color: #b42318 !important;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(.text-amber-200, .text-amber-300, .text-amber-400) {
+  color: #8a4b08 !important;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(
+  .border-white\/5,
+  .border-white\/6,
+  .border-white\/7,
+  .border-white\/8,
+  .border-white\/10
+) {
+  border-color: rgba(27, 77, 57, 0.12) !important;
+}
+
+.page-theme-scope[data-page-theme="light"] [class*="bg-white/"] {
+  background-color: rgba(20, 72, 49, 0.045) !important;
+}
+
+.page-theme-scope[data-page-theme="light"] [class*="bg-cyan-"] {
+  background-color: rgba(8, 132, 93, 0.1) !important;
+}
+
+.page-theme-scope[data-page-theme="light"] [class*="bg-indigo-"] {
+  background-color: rgba(8, 132, 93, 0.07) !important;
+}
+
+.page-theme-scope[data-page-theme="light"] [class*="bg-black/"] {
+  background-color: rgba(20, 72, 49, 0.06) !important;
+}
+
+.page-theme-scope[data-page-theme="light"] .bg-slate-950 {
+  background-color: #f5f8f6 !important;
+}
+
+.page-theme-scope[data-page-theme="light"] [class*="border-cyan-"] {
+  border-color: rgba(8, 132, 93, 0.3) !important;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(.bg-cyan-500, .bg-cyan-400, .hover\:bg-cyan-400:hover) {
+  background-color: #07845d !important;
+}
+
+.page-theme-scope[data-page-theme="light"] :is(input, button, a) {
+  accent-color: #07845d;
+}
+
+.page-theme-scope[data-page-theme="light"] input {
+  border-color: rgba(27, 77, 57, 0.2) !important;
+}
+
+.page-theme-scope[data-page-theme="light"] input:focus {
+  border-color: #07845d !important;
+}
+
+.page-theme-scope[data-page-theme="light"] input::placeholder {
+  color: #8a9a92 !important;
+}
+
+.page-theme-scope :is([class~="from-cyan-400"], [class~="from-cyan-500"]) {
+  --tw-gradient-from: #10a875 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(16 168 117 / 0) var(--tw-gradient-to-position) !important;
+}
+
+.page-theme-scope :is([class~="to-cyan-400"], [class~="to-indigo-500"]) {
+  --tw-gradient-to: #07845d var(--tw-gradient-to-position) !important;
+}
+
+.page-theme-scope .gradient-text {
+  background-image: linear-gradient(135deg, #07845d 0%, #10a875 55%, #34d399 100%);
+}
+
+.page-theme-scope[data-page-theme="dark"] :is(
+  .text-cyan-100,
+  .text-cyan-200,
+  .text-cyan-300,
+  .text-cyan-400,
+  .text-cyan-500,
+  .text-teal-400,
+  .text-indigo-100,
+  .text-indigo-300,
+  .text-indigo-400
+) {
+  color: #52d6a0 !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] [class*="bg-cyan-"] {
+  background-color: rgba(52, 201, 139, 0.12) !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] [class*="bg-indigo-"] {
+  background-color: rgba(52, 201, 139, 0.08) !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] :is(.bg-cyan-500, .bg-cyan-400, .hover\:bg-cyan-400:hover) {
+  background-color: #34c98b !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] [class*="border-cyan-"] {
+  border-color: rgba(82, 214, 160, 0.3) !important;
+}
+
+/* Global button text, border, and shadow rules independent of page theme. */
 :root {
   --button-neon-c-green: #008f5a;
 }
 
-html body :is(button, [role="button"], .btn, input[type="button"], input[type="submit"], input[type="reset"]) {
+html body :is(button, [role="button"], .btn, input[type="button"], input[type="submit"], input[type="reset"]),
+html body .page-theme-scope[data-page-theme] :is(button, [role="button"], .btn, input[type="button"], input[type="submit"], input[type="reset"]) {
   color: var(--button-neon-c-green) !important;
   border: 1px solid var(--button-neon-c-green) !important;
   box-shadow: none !important;
@@ -261,6 +474,7 @@ html body :is(button, [role="button"], .btn, input[type="button"], input[type="s
   text-shadow: none !important;
 }
 
-html body :is(button, [role="button"], .btn) :not(svg, svg *) {
+html body :is(button, [role="button"], .btn) :not(svg, svg *),
+html body .page-theme-scope[data-page-theme] :is(button, [role="button"], .btn) :not(svg, svg *) {
   color: var(--button-neon-c-green) !important;
 }

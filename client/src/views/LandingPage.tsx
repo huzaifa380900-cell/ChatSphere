@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { AppLink, useRouter } from '../context/RouterContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { PageThemeScope, PageThemeSwitch, usePageTheme } from '../components/PageTheme.tsx';
 
 /* ─── Animation Variants ─────────────────────────────────────────────────── */
 const fadeUp = {
@@ -146,7 +147,7 @@ function HeroGraphic() {
               transition={{ duration: 0.5, delay: 0.6 + i * 0.18 }}
             >
               {msg.align === 'left' && (
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-[9px] font-bold text-white mr-2 mt-1 shrink-0">E</div>
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-[9px] font-bold text-white mr-2 mt-1 shrink-0">E</div>
               )}
               <div className={`max-w-[75%] px-3 py-2 rounded-xl text-[11px] leading-relaxed ${
                 msg.align === 'right'
@@ -171,7 +172,7 @@ function HeroGraphic() {
             animate={{ opacity: 1 }}
             transition={{ delay: 1.4 }}
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-[9px] font-bold text-white shrink-0">E</div>
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-[9px] font-bold text-white shrink-0">E</div>
             <div className="glass-card px-3 py-2 rounded-xl rounded-bl-sm border border-white/8 flex items-center gap-1.5">
               <span className="typing-dot w-1.5 h-1.5 rounded-full bg-slate-400" />
               <span className="typing-dot w-1.5 h-1.5 rounded-full bg-slate-400" />
@@ -382,7 +383,7 @@ function WorkspacePreview() {
               {messages.map((msg, i) => (
                 <div key={i} className={`flex gap-2.5 ${msg.side === 'right' ? 'justify-end' : 'justify-start'}`}>
                   {msg.side === 'left' && (
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-1">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-1">
                       {msg.from[0]}
                     </div>
                   )}
@@ -467,10 +468,10 @@ function SecuritySection({ user, navigate }: { user: ReturnType<typeof useAuth>[
           </motion.p>
           <motion.div variants={fadeUp} custom={2} className="space-y-3">
             {[
-              { icon: Lock, text: 'HttpOnly cookies — no access from JavaScript', accent: '#06B6D4' },
-              { icon: Shield, text: 'HMAC CSRF double-submit protection on mutations', accent: '#818CF8' },
-              { icon: Globe, text: 'Short-lived signed Cloudinary URLs per member', accent: '#34D399' },
-              { icon: Star, text: 'Bcrypt 12 rounds + 6-digit email OTP verification', accent: '#FBBF24' },
+              { icon: Lock, text: 'HttpOnly cookies — no access from JavaScript', accent: '#07845D' },
+              { icon: Shield, text: 'HMAC CSRF double-submit protection on mutations', accent: '#07845D' },
+              { icon: Globe, text: 'Short-lived signed Cloudinary URLs per member', accent: '#07845D' },
+              { icon: Star, text: 'Bcrypt 12 rounds + 6-digit email OTP verification', accent: '#07845D' },
             ].map(({ icon: Icon, text, accent }) => (
               <div key={text} className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}>
@@ -489,8 +490,8 @@ function SecuritySection({ user, navigate }: { user: ReturnType<typeof useAuth>[
         </div>
         <motion.div variants={scaleIn} custom={1} className="space-y-4">
           {[
-            { quote: 'Moving to transactional PostgreSQL messaging eliminated dropped attachments and gave us verifiable audit trails.', name: 'Elena Rostova', role: 'Director of Platform Engineering', avatar: 'ER', gradient: 'from-indigo-400 to-purple-500' },
-            { quote: 'HttpOnly refresh rotation combined with signed Cloudinary URLs passed our external penetration audit without a single token exposure finding.', name: 'Marcus Vance', role: 'Principal Security Architect', avatar: 'MV', gradient: 'from-cyan-400 to-teal-500' },
+            { quote: 'Moving to transactional PostgreSQL messaging eliminated dropped attachments and gave us verifiable audit trails.', name: 'Elena Rostova', role: 'Director of Platform Engineering', avatar: 'ER', gradient: 'from-emerald-500 to-emerald-400' },
+            { quote: 'HttpOnly refresh rotation combined with signed Cloudinary URLs passed our external penetration audit without a single token exposure finding.', name: 'Marcus Vance', role: 'Principal Security Architect', avatar: 'MV', gradient: 'from-emerald-500 to-emerald-400' },
           ].map((t) => (
             <div key={t.name} className="p-5 rounded-2xl bg-white/4 border border-white/8 space-y-3">
               <p className="text-sm text-slate-200 leading-relaxed">"{t.quote}"</p>
@@ -524,11 +525,18 @@ function FinalCta({ user, navigate }: { user: ReturnType<typeof useAuth>['user']
     </motion.div>
   );
 }
-export function LandingPage() {
+function LandingPageContent() {
   const { user } = useAuth();
   const { navigate } = useRouter();
   const { scrollY } = useScroll();
-  const headerBg = useTransform(scrollY, [0, 80], ['rgba(8,14,26,0)', 'rgba(8,14,26,0.92)']);
+  const { theme } = usePageTheme();
+  const headerBg = useTransform(
+    scrollY,
+    [0, 80],
+    theme === 'light'
+      ? ['rgba(248,251,250,0)', 'rgba(248,251,250,0.94)']
+      : ['rgba(8,14,26,0)', 'rgba(8,14,26,0.92)']
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -539,42 +547,42 @@ export function LandingPage() {
       icon: Zap,
       title: 'Idempotent Real-Time Messaging',
       description: 'Client-generated idempotency keys enforce a unique composite constraint in PostgreSQL. Auto-reconnect synchronizes missed updates without duplicates.',
-      accent: '#06B6D4',
+      accent: '#07845D',
       badge: 'Core',
     },
     {
       icon: Lock,
       title: 'HttpOnly Cookie Sessions',
       description: 'Zero credentials in localStorage. JWT access + rotating refresh tokens reside strictly in HttpOnly cookies with HMAC CSRF headers.',
-      accent: '#818CF8',
+      accent: '#07845D',
       badge: 'Security',
     },
     {
       icon: FileText,
       title: 'Server-Signed Cloud Media',
       description: 'Uploads validate MIME types and binary magic headers before issuing 300s Cloudinary signatures — never touching local server disk.',
-      accent: '#34D399',
+      accent: '#07845D',
       badge: 'Media',
     },
     {
       icon: Users,
       title: 'Group & Platform Moderation',
       description: 'Dedicated USER and ADMIN server roles, abuse reporting, instant session termination for suspended accounts, and immutable audit logs.',
-      accent: '#FBBF24',
+      accent: '#07845D',
       badge: 'Admin',
     },
     {
       icon: Bell,
       title: 'Web Push Notifications',
       description: 'VAPID-signed push subscriptions with granular controls. Push, email, and in-app notification layers across all devices.',
-      accent: '#F472B6',
+      accent: '#07845D',
       badge: 'Notifications',
     },
     {
       icon: Sparkles,
       title: 'AI-Powered Composer',
       description: 'Integrated AI writer with tone control, grammar correction, and sticker generation. Voice transcription converts recordings to text.',
-      accent: '#A78BFA',
+      accent: '#07845D',
       badge: 'AI',
     },
   ];
@@ -586,7 +594,7 @@ export function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#080E1A] text-slate-100 flex flex-col overflow-x-hidden">
+    <div className="landing-page min-h-screen bg-[#080E1A] text-slate-100 flex flex-col overflow-x-hidden">
 
       {/* ── Sticky Header ──────────────────────────────────────────────────── */}
       <motion.header
@@ -625,6 +633,7 @@ export function LandingPage() {
 
           {/* CTA */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
+            <PageThemeSwitch />
             <motion.button
               suppressHydrationWarning
               type="button"
@@ -663,6 +672,7 @@ export function LandingPage() {
               className="md:hidden overflow-hidden border-t border-white/5 bg-[#080E1A]/95 backdrop-blur-xl"
             >
               <div className="px-5 py-4 flex flex-col gap-3">
+                <PageThemeSwitch />
                 {navLinks.map((l) => (
                   <a
                     key={l.href}
@@ -750,7 +760,7 @@ export function LandingPage() {
                 <motion.button
                   suppressHydrationWarning
                   type="button"
-                  whileHover={{ scale: 1.04, boxShadow: '0 0 32px rgba(6,182,212,0.35)' }}
+                  whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => navigate(user ? '/chat' : '/register')}
                   className="group px-6 py-3.5 text-sm font-semibold bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 rounded-xl shadow-xl shadow-cyan-500/25 inline-flex items-center gap-2 cursor-pointer"
@@ -868,5 +878,13 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export function LandingPage() {
+  return (
+    <PageThemeScope>
+      <LandingPageContent />
+    </PageThemeScope>
   );
 }

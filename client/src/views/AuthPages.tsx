@@ -11,6 +11,7 @@ import { apiClient, extractApiError } from '../lib/api.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { AppLink, useRouter, useRouterSearchParams } from '../context/RouterContext.tsx';
 import type { AuthUser } from '../types/models.ts';
+import { PageThemeScope, PageThemeSwitch } from '../components/PageTheme.tsx';
 
 // Ephemeral in-memory notice strictly for local/sandbox development when external SMTP isn't configured
 let pendingDevVerificationHint: { email: string; code?: string; previewUrl?: string } | null = null;
@@ -80,7 +81,8 @@ function AuthCardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#080E1A] text-slate-100 flex flex-col justify-between px-4 py-8 relative overflow-hidden">
+    <PageThemeScope>
+    <div className="auth-page min-h-screen bg-[#080E1A] text-slate-100 flex flex-col justify-between px-4 py-8 relative overflow-hidden">
       {/* Background blobs */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-cyan-600/6 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-indigo-600/6 rounded-full blur-3xl pointer-events-none" />
@@ -93,7 +95,7 @@ function AuthCardLayout({
         }}
       />
 
-      <div className="max-w-md w-full mx-auto relative z-10">
+      <div className="max-w-md w-full mx-auto relative z-10 flex items-center justify-between gap-4">
         <AppLink
           href="/"
           className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-200 transition-colors duration-200"
@@ -101,6 +103,7 @@ function AuthCardLayout({
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to ChatSphere</span>
         </AppLink>
+        <PageThemeSwitch />
       </div>
 
       <motion.div
@@ -133,6 +136,7 @@ function AuthCardLayout({
         Protected by HttpOnly cookie sessions &amp; CSRF verification
       </div>
     </div>
+    </PageThemeScope>
   );
 }
 
@@ -195,7 +199,7 @@ function AuthSubmitButton({ loading, children }: { loading: boolean; children: R
     <motion.button
       type="submit"
       disabled={loading}
-      whileHover={!loading ? { scale: 1.02, boxShadow: '0 0 24px rgba(6,182,212,0.3)' } : {}}
+      whileHover={!loading ? { scale: 1.02 } : {}}
       whileTap={!loading ? { scale: 0.97 } : {}}
       className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 font-semibold text-sm shadow-lg shadow-cyan-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
     >
