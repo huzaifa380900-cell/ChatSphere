@@ -594,7 +594,7 @@ function LandingPageContent() {
   ];
 
   return (
-    <div className="landing-page min-h-screen bg-[#080F0D] text-slate-100 flex flex-col overflow-x-hidden">
+    <div id="top" className="landing-page min-h-screen bg-[#080F0D] text-slate-100 flex flex-col overflow-x-hidden">
 
       {/* ── Sticky Header ──────────────────────────────────────────────────── */}
       <motion.header
@@ -858,22 +858,53 @@ function LandingPageContent() {
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className="mt-auto border-t border-white/5 py-10 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <img
-              src="/logo.png"
-              alt="ChatSphere"
-              className="h-10 w-[128px] object-cover object-center sm:h-12 sm:w-[152px]"
-            />
-            <div>
-              <p suppressHydrationWarning className="text-xs text-slate-500">© {new Date().getFullYear()} Real-time messaging platform.</p>
+      <footer className="mt-auto border-t border-white/10 bg-[#07100D] px-5 pt-16 pb-8 sm:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-12 border-b border-white/10 pb-12 sm:grid-cols-3 lg:grid-cols-4 lg:gap-12">
+            <div className="col-span-2 sm:col-span-3 lg:col-span-2">
+              <AppLink href="/" className="inline-flex items-center" aria-label="ChatSphere home">
+                <img
+                  src="/logo.png"
+                  alt="ChatSphere"
+                  className="h-12 w-[152px] object-cover object-center"
+                />
+              </AppLink>
+              <p className="mt-4 max-w-md text-sm leading-6 text-slate-400">
+                Real-time conversations built around privacy, reliable delivery, and secure media sharing.
+              </p>
+              <AppLink
+                href="/register"
+                className="mt-6 inline-flex items-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
+              >
+                Create your account
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </AppLink>
             </div>
+
+            <nav aria-label="Footer product links">
+              <h2 className="text-sm font-semibold text-white">Explore</h2>
+              <ul className="mt-4 space-y-3 text-sm text-slate-400">
+                <li><a href="#features" className="transition-colors hover:text-white">Features</a></li>
+                <li><a href="#preview" className="transition-colors hover:text-white">Workspace preview</a></li>
+                <li><a href="#security" className="transition-colors hover:text-white">Security</a></li>
+                <li><a href="#top" className="transition-colors hover:text-white">Back to top</a></li>
+              </ul>
+            </nav>
+
+            <nav aria-label="Footer account links">
+              <h2 className="text-sm font-semibold text-white">Your account</h2>
+              <ul className="mt-4 space-y-3 text-sm text-slate-400">
+                <li><AppLink href="/login" className="transition-colors hover:text-white">Sign in</AppLink></li>
+                <li><AppLink href="/register" className="transition-colors hover:text-white">Create account</AppLink></li>
+                <li><AppLink href="/verify-email" className="transition-colors hover:text-white">Verify email</AppLink></li>
+                <li><AppLink href="/forgot-password" className="transition-colors hover:text-white">Forgot password</AppLink></li>
+              </ul>
+            </nav>
           </div>
-          <div className="flex flex-wrap items-center gap-6 text-xs text-slate-500">
-            <AppLink href="/login" className="hover:text-white transition-colors">Sign In</AppLink>
-            <AppLink href="/register" className="hover:text-white transition-colors">Register</AppLink>
-            <AppLink href="/forgot-password" className="hover:text-white transition-colors">Reset Password</AppLink>
+
+          <div className="flex flex-col gap-3 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <p suppressHydrationWarning>© {new Date().getFullYear()} ChatSphere. All rights reserved.</p>
+            <p>Private conversations. Connected in real time.</p>
           </div>
         </div>
       </footer>

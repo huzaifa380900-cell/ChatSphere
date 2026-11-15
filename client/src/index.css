@@ -534,3 +534,23 @@
 ) {
   color: #FFFFFF !important;
 }
+
+.page-theme-scope[data-page-theme="dark"] :is(.landing-page, .auth-page) :is(
+  [class*="text-blue-"], [class*="text-sky-"], [class*="text-indigo-"], [class*="text-cyan-"]
+) {
+  color: #FFFFFF !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) button {
+  background: #07845D !important;
+  color: #FFFFFF !important;
+  border: 0 !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) button * {
+  color: #FFFFFF !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) button svg [fill]:not([fill="none"]) {
+  fill: #FFFFFF !important;
+}

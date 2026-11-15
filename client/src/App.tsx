@@ -99,9 +99,9 @@ export default function App({ initialUrl }: { initialUrl?: string } = {}) {
               position="top-right"
               toastOptions={{
                 style: {
-                  background: '#101C18',
-                  color: '#F8FAFC',
-                  border: '1px solid #23332C',
+                  background: '#07845D',
+                  color: '#FFFFFF',
+                  border: 'none',
                   fontSize: '13px',
                 },
               }}

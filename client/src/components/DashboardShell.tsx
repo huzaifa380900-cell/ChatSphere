@@ -356,7 +356,7 @@ export function DashboardShell({
 
         <nav
           aria-label="Mobile navigation"
-          className="lg:hidden absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-base-200/95 px-1 pt-1.5 backdrop-blur-xl"
+          className="lg:hidden fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-base-200/95 px-1 pt-1.5 backdrop-blur-xl"
           style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
         >
           <div className="flex items-stretch justify-around gap-1">
