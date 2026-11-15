@@ -17,8 +17,6 @@ export function PageThemeScope({ children }: { children: React.ReactNode }) {
     const savedTheme = window.localStorage.getItem('chatsphere-page-theme');
     if (savedTheme === 'light' || savedTheme === 'dark') {
       setTheme(savedTheme);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
     }
   }, []);
 

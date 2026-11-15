@@ -253,11 +253,6 @@
   min-height: 100vh;
 }
 
-.landing-page button {
-  color: #2E8B57 !important;
-  border: 1px solid #2E8B57 !important;
-}
-
 .page-theme-scope .page-theme-switch {
   display: inline-flex;
   align-items: center;
@@ -363,6 +358,10 @@
   color: #087653 !important;
 }
 
+.page-theme-scope[data-page-theme="light"] .landing-page [class~="text-emerald-50"] {
+  color: #1d302a !important;
+}
+
 .page-theme-scope[data-page-theme="light"] :is(.text-red-400, .text-red-500) {
   color: #b42318 !important;
 }
@@ -465,4 +464,73 @@
 
 .page-theme-scope[data-page-theme="dark"] [class*="border-emerald-"] {
   border-color: rgba(82, 214, 160, 0.3) !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) button {
+  color: #2E8B57 !important;
+  border-color: #2E8B57 !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) :is(
+  a,
+  [class*="text-blue-"], [class*="text-sky-"], [class*="text-indigo-"], [class*="text-cyan-"]
+) {
+  color: #2E8B57 !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) :is(
+  [class*="border-blue-"], [class*="border-sky-"], [class*="border-indigo-"], [class*="border-cyan-"],
+  [class*="ring-blue-"], [class*="ring-sky-"], [class*="ring-indigo-"], [class*="ring-cyan-"],
+  [class*="outline-blue-"], [class*="outline-sky-"], [class*="outline-indigo-"], [class*="outline-cyan-"],
+  [class*="accent-blue-"], [class*="accent-sky-"], [class*="accent-indigo-"], [class*="accent-cyan-"]
+) {
+  --tw-ring-color: #2E8B57 !important;
+  --tw-ring-offset-color: #2E8B57 !important;
+  accent-color: #2E8B57 !important;
+  border-color: #2E8B57 !important;
+  outline-color: #2E8B57 !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) :is(
+  [class*="bg-blue-"], [class*="bg-sky-"], [class*="bg-indigo-"], [class*="bg-cyan-"],
+  [class*="from-blue-"], [class*="from-sky-"], [class*="from-indigo-"], [class*="from-cyan-"],
+  [class*="to-blue-"], [class*="to-sky-"], [class*="to-indigo-"], [class*="to-cyan-"],
+  [class*="via-blue-"], [class*="via-sky-"], [class*="via-indigo-"], [class*="via-cyan-"]
+) {
+  background-color: #2E8B57 !important;
+  --tw-gradient-from: #2E8B57 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(46 139 87 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) :is(
+  [class*="fill-blue-"], [class*="fill-sky-"], [class*="fill-indigo-"], [class*="fill-cyan-"],
+  [class*="stroke-blue-"], [class*="stroke-sky-"], [class*="stroke-indigo-"], [class*="stroke-cyan-"]
+) {
+  fill: #2E8B57 !important;
+  stroke: #2E8B57 !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) input:focus,
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) button:focus-visible {
+  outline-color: #2E8B57 !important;
+  --tw-ring-color: #2E8B57 !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) input[class]:focus {
+  border-color: #2E8B57 !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) button:is(
+  [class~="bg-emerald-700"],
+  [class~="from-emerald-700"]
+) {
+  color: #FFFFFF !important;
+}
+
+.page-theme-scope[data-page-theme] :is(.landing-page, .auth-page) a:is(
+  [class~="bg-emerald-700"],
+  [class~="from-emerald-700"]
+) {
+  color: #FFFFFF !important;
 }

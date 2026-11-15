@@ -246,7 +246,10 @@ function GoogleOAuthButton() {
       className="w-full py-2.5 px-4 rounded-xl border border-white/10 bg-white/4 hover:bg-white/7 text-sm font-medium text-white flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer disabled:opacity-50"
     >
       <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-        <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.5 3.8-5.5 3.8-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.4 14.6 2.5 12 2.5 6.8 2.5 2.5 6.8 2.5 12s4.3 9.5 9.5 9.5c5.5 0 9.1-3.8 9.1-9.2 0-.6-.1-1.1-.2-1.6H12z" />
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.15v2.87A11 11 0 0012 23z" />
+        <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.03H2.15a11 11 0 000 9.94l3.69-2.87z" />
+        <path fill="#EA4335" d="M12 4.5c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.13 14.97 0 12 0A11 11 0 002.15 7.03l3.69 2.87C6.71 7.3 9.14 4.5 12 4.5z" />
       </svg>
       <span>{googleLoading ? 'Connecting to Google…' : 'Continue with Google'}</span>
     </motion.button>
