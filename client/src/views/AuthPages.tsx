@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Lock, Mail, MessageCircle, RefreshCw, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw, User } from 'lucide-react';
 import { apiClient, extractApiError } from '../lib/api.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { AppLink, useRouter, useRouterSearchParams } from '../context/RouterContext.tsx';
@@ -113,11 +113,12 @@ function AuthCardLayout({
         <div className="glass-card rounded-2xl p-7 sm:p-8 space-y-6 border border-white/8 shadow-2xl shadow-black/40">
           {/* Header */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                <MessageCircle className="w-4.5 h-4.5 text-white" />
-              </div>
-              <span className="text-xs font-semibold text-cyan-400 tracking-wide">ChatSphere</span>
+            <div className="mb-1">
+              <img
+                src="/logo.png"
+                alt="ChatSphere"
+                className="h-12 w-[144px] max-w-full object-cover object-center"
+              />
             </div>
             <h1 className="max-w-full break-words text-xl sm:text-2xl font-bold leading-snug tracking-normal text-white">
               {title}

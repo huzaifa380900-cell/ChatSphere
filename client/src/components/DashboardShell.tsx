@@ -174,10 +174,13 @@ export function DashboardShell({
             aria-label="ChatSphere home"
             title="ChatSphere"
           >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              <MessageSquare className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className={`${desktopSidebarCollapsed ? 'lg:hidden' : ''} text-sm font-bold text-base-content`}>ChatSphere</span>
+            <img
+              src="/logo.png"
+              alt=""
+              className={`h-12 w-[144px] shrink-0 object-cover ${
+                desktopSidebarCollapsed ? 'lg:w-10 lg:object-left' : 'lg:w-[144px] lg:object-center'
+              }`}
+            />
           </AppLink>
 
           {/* Connection indicator */}

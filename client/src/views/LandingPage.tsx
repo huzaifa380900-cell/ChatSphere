@@ -16,7 +16,6 @@ import {
   Bell,
   Star,
   ChevronRight,
-  MessageCircle,
   Send,
   Sparkles,
 } from 'lucide-react';
@@ -596,11 +595,12 @@ export function LandingPage() {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-5 sm:px-8 h-16">
           {/* Logo */}
-          <AppLink href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              <MessageCircle className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-base font-bold tracking-tight text-white">ChatSphere</span>
+          <AppLink href="/" className="flex shrink-0 items-center" aria-label="ChatSphere home">
+            <img
+              src="/logo.png"
+              alt=""
+              className="h-10 w-[128px] object-cover object-center sm:h-12 sm:w-[152px]"
+            />
           </AppLink>
 
           {/* Desktop Nav */}
@@ -713,18 +713,6 @@ export function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: Copy */}
             <div className="space-y-8">
-              {/* Badge */}
-              <motion.div
-                variants={fadeUp}
-                initial="hidden"
-                animate={heroInView ? 'visible' : 'hidden'}
-                custom={0}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium bg-cyan-500/10 border border-cyan-500/25 text-cyan-300"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                Production-grade real-time messaging
-              </motion.div>
-
               {/* Headline */}
               <motion.h1
                 variants={fadeUp}
@@ -862,13 +850,14 @@ export function LandingPage() {
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
       <footer className="mt-auto border-t border-white/5 py-10 px-5 sm:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center">
-              <MessageCircle className="w-3.5 h-3.5 text-white" />
-            </div>
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="ChatSphere"
+              className="h-10 w-[128px] object-cover object-center sm:h-12 sm:w-[152px]"
+            />
             <div>
-              <p className="text-sm font-bold text-white">ChatSphere</p>
-              <p suppressHydrationWarning className="text-xs text-slate-500">© {new Date().getFullYear()} ChatSphere. Real-time messaging platform.</p>
+              <p suppressHydrationWarning className="text-xs text-slate-500">© {new Date().getFullYear()} Real-time messaging platform.</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-6 text-xs text-slate-500">

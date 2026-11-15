@@ -248,3 +248,19 @@
     scroll-behavior: auto !important;
   }
 }
+/* Global button text and border token, independent of page theme and state. */
+:root {
+  --button-neon-c-green: #008f5a;
+}
+
+html body :is(button, [role="button"], .btn, input[type="button"], input[type="submit"], input[type="reset"]) {
+  color: var(--button-neon-c-green) !important;
+  border: 1px solid var(--button-neon-c-green) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+html body :is(button, [role="button"], .btn) :not(svg, svg *) {
+  color: var(--button-neon-c-green) !important;
+}
