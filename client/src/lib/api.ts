@@ -96,7 +96,7 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      const isAuthEntry = /\/auth\/(login|register|forgot-password|reset-password|refresh)(\/|$)/.test(original?.url || '');
+      const isAuthEntry = /\/auth\/(login|register|forgot-password|reset-password|refresh|me)(\/|$)/.test(original?.url || '');
       if (!isAuthEntry) redirectToSignIn();
     }
     return Promise.reject(error);

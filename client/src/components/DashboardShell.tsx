@@ -6,8 +6,6 @@ import {
   Menu,
   MessageSquare,
   Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
   Settings,
   ShieldCheck,
   Sun,
@@ -40,7 +38,6 @@ export function DashboardShell({
   const { connected, reconnecting, conversations, unreadNotificationCount } = useChatRealtime();
   const { pathname, navigate } = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
-  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(false);
 
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
@@ -161,9 +158,9 @@ export function DashboardShell({
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col bg-base-200 border-r border-white/5 transition-[width,transform] duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${desktopSidebarCollapsed ? 'lg:w-16' : 'lg:w-60'}`}
+        } lg:w-60`}
       >
-        {/* Centered brand with the desktop collapse control in the top-right */}
+        {/* Centered sidebar brand */}
         <div className="relative flex min-h-16 items-center justify-center border-b border-white/5 px-12 py-2">
           <AppLink
             href={user?.role === 'ADMIN' ? '/admin' : '/chat'}
@@ -175,23 +172,9 @@ export function DashboardShell({
             <img
               src="/logo.png"
               alt=""
-              className={`h-11 w-[132px] shrink-0 object-cover sm:h-12 sm:w-[144px] ${
-                desktopSidebarCollapsed ? 'lg:h-10 lg:w-10 lg:object-left' : 'lg:h-12 lg:w-[152px] lg:object-center'
-              }`}
+              className="h-11 w-[132px] shrink-0 object-cover sm:h-12 sm:w-[144px] lg:h-12 lg:w-[152px] lg:object-center"
             />
           </AppLink>
-          <button
-            type="button"
-            onClick={() => setDesktopSidebarCollapsed((collapsed) => !collapsed)}
-            className="absolute right-2 top-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-emerald-500 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 lg:flex"
-            aria-label={desktopSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={desktopSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-expanded={!desktopSidebarCollapsed}
-          >
-            {desktopSidebarCollapsed
-              ? <PanelLeftOpen className="h-5 w-5" />
-              : <PanelLeftClose className="h-5 w-5" />}
-          </button>
           <button
             type="button"
             onClick={() => setMobileSidebarOpen(false)}
@@ -203,9 +186,7 @@ export function DashboardShell({
         </div>
 
         {/* Nav items */}
-        <nav className={`flex-1 p-2.5 space-y-0.5 overflow-y-auto ${
-          desktopSidebarCollapsed ? 'lg:p-1.5' : ''
-        }`} aria-label="Workspace navigation">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto p-2.5" aria-label="Workspace navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -221,11 +202,11 @@ export function DashboardShell({
                       ? 'bg-emerald-50 text-emerald-700 shadow-sm'
                       : 'bg-emerald-500/15 text-emerald-300 shadow-sm'
                     : 'text-base-content/60 hover:bg-white/5 hover:text-base-content'
-                } ${desktopSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
+                }`}
               >
-                <span className={`flex items-center gap-3 min-w-0 ${desktopSidebarCollapsed ? 'lg:justify-center' : ''}`}>
+                <span className="flex min-w-0 items-center gap-3">
                   <Icon className={`w-4 h-4 shrink-0 ${item.active ? 'text-primary' : ''}`} />
-                  <span className={`${desktopSidebarCollapsed ? 'lg:hidden' : ''} truncate`}>{item.label}</span>
+                  <span className="truncate">{item.label}</span>
                 </span>
                 <AnimatePresence>
                   {item.count > 0 && (
@@ -233,9 +214,7 @@ export function DashboardShell({
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
-                      className={`absolute right-0 top-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-primary text-primary-content text-[9px] font-bold flex items-center justify-center tabular-nums ${
-                        desktopSidebarCollapsed ? 'lg:hidden' : 'lg:static lg:min-w-[20px] lg:h-5 lg:text-[10px]'
-                      }`}
+                      className="static min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-content text-[10px] font-bold flex items-center justify-center tabular-nums"
                     >
                       {item.count > 99 ? '99+' : item.count}
                     </motion.span>
@@ -247,8 +226,8 @@ export function DashboardShell({
         </nav>
 
         {/* User footer */}
-        <div className={`p-3 border-t border-white/5 space-y-2 ${desktopSidebarCollapsed ? 'lg:p-1.5' : ''}`}>
-          <div className={`flex items-center gap-2.5 px-2 py-1.5 ${desktopSidebarCollapsed ? 'lg:justify-center lg:px-0' : ''}`}>
+        <div className="space-y-2 border-t border-white/5 p-3">
+          <div className="flex items-center gap-2.5 px-2 py-1.5">
             <Avatar
               src={user?.avatarUrl}
               name={user?.displayName || 'User'}
@@ -256,28 +235,26 @@ export function DashboardShell({
               showPresence
               isOnline={connected}
             />
-            <div className={`${desktopSidebarCollapsed ? 'lg:hidden' : ''} min-w-0 flex-1`}>
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-base-content truncate">{user?.displayName}</p>
               <p className="text-[10px] text-base-content/50 truncate font-mono">@{user?.username}</p>
             </div>
           </div>
 
           <div
-            className={`flex items-center gap-1.5 px-2 pb-1 text-[10px] font-mono ${
-              desktopSidebarCollapsed ? 'lg:justify-center lg:px-0' : ''
-            }`}
+            className="flex items-center gap-1.5 px-2 pb-1 text-[10px] font-mono"
             title={connected ? 'Real-time connected' : 'Reconnecting…'}
             aria-label={connected ? 'Live' : 'Syncing'}
           >
             <span className={`relative h-2 w-2 shrink-0 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`}>
               {connected && <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />}
             </span>
-            <span className={`text-base-content/60 ${desktopSidebarCollapsed ? 'lg:hidden' : ''}`}>
+            <span className="text-base-content/60">
               {connected ? 'Live' : 'Sync…'}
             </span>
           </div>
 
-          <div className={`flex items-stretch gap-1.5 ${desktopSidebarCollapsed ? 'lg:flex-col' : 'flex-col lg:flex-row'}`}>
+          <div className="flex flex-col items-stretch gap-1.5 lg:flex-row">
             <button
               type="button"
               onClick={() => void setThemePreference(theme === 'dark' ? 'light' : 'dark')}
@@ -286,7 +263,7 @@ export function DashboardShell({
               title="Toggle color theme"
             >
               {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-              <span className={desktopSidebarCollapsed ? 'lg:hidden' : ''}>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </button>
             <button
               type="button"
@@ -296,7 +273,7 @@ export function DashboardShell({
               title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className={desktopSidebarCollapsed ? 'lg:hidden' : ''}>Sign Out</span>
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
