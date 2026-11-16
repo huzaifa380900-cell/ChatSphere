@@ -9,6 +9,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { Express, Request, Response, NextFunction } from 'express';
+import { ACCESS_COOKIE_NAME } from './middleware/security.ts';
+import { verifyAccessToken } from './utils/crypto.ts';
+import { getPrisma } from './db/prisma.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,6 +33,26 @@ function findClientRoot(): string {
 const clientRoot = findClientRoot();
 const clientDist = path.resolve(clientRoot, 'dist');
 const ssrOutlet = '<!--ssr-outlet-->';
+
+async function protectAdminPage(req: Request, res: Response, next: NextFunction) {
+  try {
+    const token = req.cookies?.[ACCESS_COOKIE_NAME];
+    if (typeof token !== 'string' || !token) return res.redirect(302, '/login');
+    const decoded = verifyAccessToken(token);
+    const session = await getPrisma().refreshSession.findUnique({
+      where: { id: decoded.sessionId },
+      include: { user: { select: { role: true, status: true } } },
+    });
+    if (
+      !session || session.revokedAt || session.expiresAt <= new Date() ||
+      session.user.role !== 'ADMIN' || session.user.status !== 'ACTIVE' ||
+      session.userId !== decoded.sub
+    ) return res.redirect(302, '/login');
+    next();
+  } catch {
+    res.redirect(302, '/login');
+  }
+}
 
 function injectRenderedApp(template: string, appHtml: string): string {
   if (!template.includes(ssrOutlet)) {
@@ -59,6 +82,8 @@ export async function registerSsrMiddleware(app: Express): Promise<void> {
 
     // Let Vite handle JS/CSS/asset requests
     app.use(vite.middlewares);
+
+    app.get(['/admin', '/admin/*'], protectAdminPage);
 
     // SSR catch-all: render every non-API route server-side
     app.get('*', async (req: Request, res: Response, next: NextFunction) => {
@@ -96,6 +121,8 @@ export async function registerSsrMiddleware(app: Express): Promise<void> {
 
     // Serve static assets (JS, CSS, images, etc.)
     app.use(sirv(clientAssets, { extensions: [], dev: false }));
+
+    app.get(['/admin', '/admin/*'], protectAdminPage);
 
     // Load the pre-built render function once
     const { render } = (await import(pathToFileURL(serverBundle).href)) as {

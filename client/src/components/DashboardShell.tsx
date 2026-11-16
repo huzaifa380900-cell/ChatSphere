@@ -163,49 +163,27 @@ export function DashboardShell({
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } ${desktopSidebarCollapsed ? 'lg:w-16' : 'lg:w-60'}`}
       >
-        {/* Logo and connection status */}
-        <div className={`min-h-16 px-3 py-2 flex items-center justify-between border-b border-white/5 ${
-          desktopSidebarCollapsed
-            ? 'lg:flex-col lg:justify-center lg:gap-1 lg:px-2'
-            : 'lg:px-4'
-        }`}>
-          <div className="flex min-w-0 flex-col">
-            <AppLink
-              href={user?.role === 'ADMIN' ? '/admin' : '/chat'}
-              onClick={() => setMobileSidebarOpen(false)}
-              className="flex items-center"
-              aria-label="ChatSphere home"
-              title="ChatSphere"
-            >
-              <img
-                src="/logo.png"
-                alt=""
-                className={`h-10 w-[120px] shrink-0 object-cover ${
-                  desktopSidebarCollapsed
-                    ? 'lg:h-10 lg:w-10 lg:object-left'
-                    : 'lg:h-12 lg:w-[144px] lg:object-center'
-                }`}
-              />
-            </AppLink>
-            <motion.div
-              animate={{ opacity: 1 }}
-              className={`${desktopSidebarCollapsed ? 'flex lg:hidden' : 'flex'} mt-1 items-center gap-1.5`}
-              title={connected ? 'Real-time connected' : 'Reconnecting…'}
-            >
-              <div className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`}>
-                {connected && (
-                  <span className="block h-2 w-2 rounded-full bg-emerald-400 animate-ping opacity-60" />
-                )}
-              </div>
-              <span className="text-[10px] text-base-content/60 font-mono">
-                {connected ? 'Live' : 'Sync…'}
-              </span>
-            </motion.div>
-          </div>
+        {/* Centered brand with the desktop collapse control in the top-right */}
+        <div className="relative flex min-h-16 items-center justify-center border-b border-white/5 px-12 py-2">
+          <AppLink
+            href={user?.role === 'ADMIN' ? '/admin' : '/chat'}
+            onClick={() => setMobileSidebarOpen(false)}
+            className="flex min-w-0 items-center justify-center"
+            aria-label="ChatSphere home"
+            title="ChatSphere"
+          >
+            <img
+              src="/logo.png"
+              alt=""
+              className={`h-11 w-[132px] shrink-0 object-cover sm:h-12 sm:w-[144px] ${
+                desktopSidebarCollapsed ? 'lg:h-10 lg:w-10 lg:object-left' : 'lg:h-12 lg:w-[152px] lg:object-center'
+              }`}
+            />
+          </AppLink>
           <button
             type="button"
             onClick={() => setDesktopSidebarCollapsed((collapsed) => !collapsed)}
-            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base-content/60 hover:bg-white/5 hover:text-base-content lg:flex"
+            className="absolute right-2 top-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-emerald-500 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 lg:flex"
             aria-label={desktopSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={desktopSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!desktopSidebarCollapsed}
@@ -282,6 +260,21 @@ export function DashboardShell({
               <p className="text-xs font-semibold text-base-content truncate">{user?.displayName}</p>
               <p className="text-[10px] text-base-content/50 truncate font-mono">@{user?.username}</p>
             </div>
+          </div>
+
+          <div
+            className={`flex items-center gap-1.5 px-2 pb-1 text-[10px] font-mono ${
+              desktopSidebarCollapsed ? 'lg:justify-center lg:px-0' : ''
+            }`}
+            title={connected ? 'Real-time connected' : 'Reconnecting…'}
+            aria-label={connected ? 'Live' : 'Syncing'}
+          >
+            <span className={`relative h-2 w-2 shrink-0 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`}>
+              {connected && <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />}
+            </span>
+            <span className={`text-base-content/60 ${desktopSidebarCollapsed ? 'lg:hidden' : ''}`}>
+              {connected ? 'Live' : 'Sync…'}
+            </span>
           </div>
 
           <div className={`flex items-stretch gap-1.5 ${desktopSidebarCollapsed ? 'lg:flex-col' : 'flex-col lg:flex-row'}`}>

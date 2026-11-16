@@ -4,8 +4,6 @@ import { env } from '../config/env.ts';
 import { checkDatabaseHealth, getPrisma } from '../db/prisma.ts';
 import {
   AuthRequest,
-  requireAdmin,
-  requireAuth,
   requireCsrf,
 } from '../middleware/security.ts';
 import {
@@ -18,8 +16,6 @@ import { realtimeHub } from '../realtime/hub.ts';
 import { Errors } from '../utils/errors.ts';
 
 export const adminRouter = Router();
-
-adminRouter.use(requireAuth, requireAdmin);
 
 adminRouter.get('/overview', async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {

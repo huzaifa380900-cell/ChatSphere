@@ -146,6 +146,8 @@ export function ChatWorkspacePage({
   const [threadSearchOpen, setThreadSearchOpen] = useState(false);
   const [threadSearchQuery, setThreadSearchQuery] = useState('');
   const [threadSearchResults, setThreadSearchResults] = useState<ChatMessage[] | null>(null);
+  const [threadSearchError, setThreadSearchError] = useState('');
+  const [reportDetailsError, setReportDetailsError] = useState('');
 
   // Modals: New Direct Message, New Group, Report Abuse, Add Member
   const [dmModalOpen, setDmModalOpen] = useState(false);
@@ -154,6 +156,11 @@ export function ChatWorkspacePage({
   const [reportTargetMsg, setReportTargetMsg] = useState<ChatMessage | null>(null);
   const [reportReason, setReportReason] = useState<'SPAM' | 'HARASSMENT' | 'MALWARE' | 'IMPERSONATION' | 'ILLEGAL_CONTENT' | 'OTHER'>('SPAM');
   const [reportDetails, setReportDetails] = useState('');
+  const [aiWriterInstructionError, setAiWriterInstructionError] = useState('');
+  const [aiStickerPromptError, setAiStickerPromptError] = useState('');
+  const [transcriptionFileError, setTranscriptionFileError] = useState('');
+  const [editDraftError, setEditDraftError] = useState('');
+  const [transcriptionTextError, setTranscriptionTextError] = useState('');
   const [submittingReport, setSubmittingReport] = useState(false);
 
   // User search state inside modals
@@ -344,7 +351,6 @@ export function ChatWorkspacePage({
               : item
           )
         );
-        toast.error(message);
       }
     },
     [activeConversationId]
@@ -362,13 +368,14 @@ export function ChatWorkspacePage({
     const allowed = new Set(['audio/webm', 'audio/wav', 'audio/x-wav', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/flac', 'audio/aac', 'audio/mp3']);
     const mimeType = file.type.toLowerCase().split(';')[0].trim();
     if (!allowed.has(mimeType)) {
-      toast.error('Choose a supported audio file (WebM, WAV, MP3, MP4, OGG, FLAC, or AAC).');
+      setTranscriptionFileError('Choose a supported audio file (WebM, WAV, MP3, MP4, OGG, FLAC, or AAC).');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Audio files must be 10 MB or smaller.');
+      setTranscriptionFileError('Audio files must be 10 MB or smaller.');
       return;
     }
+    setTranscriptionFileError('');
     setTranscribing(true);
     try {
       const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -450,7 +457,11 @@ export function ChatWorkspacePage({
   };
 
   const handleGenerateWriterText = async () => {
-    if (!aiWriterInstruction.trim()) return;
+    if (!aiWriterInstruction.trim()) {
+      setAiWriterInstructionError('Enter an instruction before generating a message.');
+      return;
+    }
+    setAiWriterInstructionError('');
     setAiWorking(true);
     try {
       const response = await apiClient.post<{ success: boolean; data: { text: string } }>('/ai/text', {
@@ -468,7 +479,11 @@ export function ChatWorkspacePage({
   };
 
   const handleGenerateSticker = async () => {
-    if (!aiStickerPrompt.trim()) return;
+    if (aiStickerPrompt.trim().length < 3) {
+      setAiStickerPromptError('Enter at least 3 characters for the image prompt.');
+      return;
+    }
+    setAiStickerPromptError('');
     setAiWorking(true);
     try {
       const response = await apiClient.post<{ success: boolean; data: { image: string } }>('/ai/image', {
@@ -592,7 +607,12 @@ export function ChatWorkspacePage({
   };
 
   const handleSaveEdit = async () => {
-    if (!editingMessage || !activeConversationId || !editDraft.trim()) return;
+    if (!editingMessage || !activeConversationId) return;
+    if (!editDraft.trim()) {
+      setEditDraftError('Message cannot be empty.');
+      return;
+    }
+    setEditDraftError('');
     try {
       await editMessage(activeConversationId, editingMessage.id, editDraft.trim());
       setEditingMessage(null);
@@ -688,9 +708,10 @@ export function ChatWorkspacePage({
     e.preventDefault();
     if (!activeConversationId) return;
     if (!threadSearchQuery.trim()) {
-      setThreadSearchResults(null);
+      setThreadSearchError('Enter a search term.');
       return;
     }
+    setThreadSearchError('');
     try {
       const res = await apiClient.get<{
         success: boolean;
@@ -706,10 +727,12 @@ export function ChatWorkspacePage({
 
   const handleSubmitAbuseReport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reportTargetMsg || reportDetails.trim().length < 10) {
-      toast.error('Please enter at least 10 characters describing the issue.');
+    if (!reportTargetMsg) return;
+    if (reportDetails.trim().length < 10) {
+      setReportDetailsError('Please enter at least 10 characters describing the issue.');
       return;
     }
+    setReportDetailsError('');
     setSubmittingReport(true);
     try {
       await apiClient.post('/notifications/reports', {
@@ -722,6 +745,7 @@ export function ChatWorkspacePage({
       toast.success('Report submitted to platform moderators.');
       setReportTargetMsg(null);
       setReportDetails('');
+      setReportDetailsError('');
     } catch (err) {
       toast.error(extractApiError(err).message);
     } finally {
@@ -1053,15 +1077,20 @@ export function ChatWorkspacePage({
             {threadSearchOpen && (
               <form
                 onSubmit={handleThreadSearch}
+                noValidate
                 className="px-4 py-2.5 border-b border-base-300 bg-base-200/70 flex items-center gap-2"
               >
                 <input
                   type="search"
                   value={threadSearchQuery}
-                  onChange={(e) => setThreadSearchQuery(e.target.value)}
+                  onChange={(e) => { setThreadSearchQuery(e.target.value); if (e.target.value.trim()) setThreadSearchError(''); }}
+                  onBlur={() => { if (!threadSearchQuery.trim()) setThreadSearchError('Enter a search term.'); }}
+                  aria-invalid={Boolean(threadSearchError)}
+                  aria-describedby={threadSearchError ? 'thread-search-error' : undefined}
                   placeholder="Search message history..."
-                  className="flex-1 px-3 py-1.5 text-xs rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+                  className={`flex-1 px-3 py-1.5 text-xs rounded-lg bg-base-100 border focus:outline-none ${threadSearchError ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300 focus:border-primary'}`}
                 />
+                {threadSearchError && <p id="thread-search-error" className="text-xs text-red-500" role="alert">{threadSearchError}</p>}
                 <button type="submit" className="btn btn-xs btn-primary">
                   Search
                 </button>
@@ -1171,10 +1200,13 @@ export function ChatWorkspacePage({
                             <div className="space-y-2 min-w-[220px]">
                               <textarea
                                 value={editDraft}
-                                onChange={(e) => setEditDraft(e.target.value)}
+                                onChange={(e) => { setEditDraft(e.target.value); if (e.target.value.trim()) setEditDraftError(''); }}
+                                onBlur={() => { if (!editDraft.trim()) setEditDraftError('Message cannot be empty.'); }}
+                                aria-invalid={Boolean(editDraftError)}
                                 rows={2}
-                                className="w-full p-2 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+                                className={`w-full p-2 text-sm rounded-lg bg-base-100 border focus:outline-none ${editDraftError ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300 focus:border-primary'}`}
                               />
+                              {editDraftError && <p className="text-xs text-red-500" role="alert">{editDraftError}</p>}
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
@@ -1323,6 +1355,7 @@ export function ChatWorkspacePage({
                                   onClick={() => {
                                     setEditingMessage(msg);
                                     setEditDraft(msg.content);
+                                    setEditDraftError('');
                                   }}
                                   title="Edit"
                                   aria-label="Edit message"
@@ -1419,7 +1452,7 @@ export function ChatWorkspacePage({
                   {uploadingItems.map((up) => (
                     <div
                       key={up.localId}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-base-100 border border-base-300 text-xs max-w-xs"
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg bg-base-100 border text-xs max-w-xs ${up.status === 'error' ? 'border-red-500' : 'border-base-300'}`}
                     >
                       <div className="min-w-0 flex-1">
                         <p className="font-medium truncate">{up.file.name}</p>
@@ -1512,6 +1545,7 @@ export function ChatWorkspacePage({
               ) : (
                 <form
                   onSubmit={handleSend}
+                  noValidate
                   className="relative flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-2"
                 >
                   <input
@@ -1588,6 +1622,8 @@ export function ChatWorkspacePage({
                       )}
                     </div>
                   </div>
+
+                  {transcriptionFileError && <p className="order-3 w-full text-xs text-red-500" role="alert">{transcriptionFileError}</p>}
 
                   <div className="order-2 flex w-full min-w-0 items-end gap-2 sm:contents">
                     <textarea
@@ -1855,7 +1891,9 @@ export function ChatWorkspacePage({
               <span className="label-text text-xs font-medium">Your instruction</span>
               <textarea
                 value={aiWriterInstruction}
-                onChange={(event) => setAiWriterInstruction(event.target.value)}
+                onChange={(event) => { setAiWriterInstruction(event.target.value); if (event.target.value.trim()) setAiWriterInstructionError(''); }}
+                onBlur={() => { if (!aiWriterInstruction.trim()) setAiWriterInstructionError('Enter an instruction before generating a message.'); }}
+                aria-invalid={Boolean(aiWriterInstructionError)}
                 maxLength={2000}
                 rows={3}
                 placeholder={
@@ -1863,8 +1901,9 @@ export function ChatWorkspacePage({
                     ? 'Translate into Spanish'
                     : 'What should the message say?'
                 }
-                className="textarea textarea-bordered min-h-24 w-full resize-y leading-relaxed"
+                className={`textarea textarea-bordered min-h-24 w-full resize-y leading-relaxed ${aiWriterInstructionError ? 'border-red-500 focus:ring-1 focus:ring-red-500' : ''}`}
               />
+              {aiWriterInstructionError && <span className="text-xs text-red-500" role="alert">{aiWriterInstructionError}</span>}
             </label>
 
             <label className="block space-y-2">
@@ -1999,12 +2038,15 @@ export function ChatWorkspacePage({
               <span className="label-text text-xs font-medium">Prompt</span>
               <textarea
                 value={aiStickerPrompt}
-                onChange={(event) => setAiStickerPrompt(event.target.value)}
+                onChange={(event) => { setAiStickerPrompt(event.target.value); if (event.target.value.trim().length >= 3) setAiStickerPromptError(''); }}
+                onBlur={() => { if (aiStickerPrompt.trim().length < 3) setAiStickerPromptError('Enter at least 3 characters for the image prompt.'); }}
+                aria-invalid={Boolean(aiStickerPromptError)}
                 maxLength={1500}
                 rows={4}
                 placeholder="A cheerful astronaut cat waving hello"
-                className="textarea textarea-bordered min-h-28 w-full resize-y leading-relaxed"
+                className={`textarea textarea-bordered min-h-28 w-full resize-y leading-relaxed ${aiStickerPromptError ? 'border-red-500 focus:ring-1 focus:ring-red-500' : ''}`}
               />
+              {aiStickerPromptError && <span className="text-xs text-red-500" role="alert">{aiStickerPromptError}</span>}
             </label>
 
             <div className="flex justify-end pt-1">
@@ -2081,8 +2123,9 @@ export function ChatWorkspacePage({
         <div role="dialog" aria-modal="true" aria-labelledby="transcription-title" className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-3 sm:p-6" onClick={() => setTranscriptionOpen(false)}>
           <div className="bg-base-200 border border-base-300 rounded-2xl p-4 sm:p-6 w-full max-w-xl space-y-4" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between"><div><h2 id="transcription-title" className="text-lg font-bold">Voice transcription</h2><p className="text-xs text-base-content/60">Review and edit the transcript before using it.</p></div><button type="button" onClick={() => setTranscriptionOpen(false)} className="btn btn-sm btn-ghost btn-square" aria-label="Close transcription"><X className="w-4 h-4" /></button></div>
-            <textarea value={transcriptionText} onChange={(event) => setTranscriptionText(event.target.value)} rows={6} className="textarea textarea-bordered w-full" aria-label="Editable transcription" />
-            <div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => void navigator.clipboard.writeText(transcriptionText).then(() => toast.success('Copied to clipboard.')).catch(() => toast.error('Clipboard access is unavailable.'))} className="btn btn-sm btn-ghost gap-1"><Copy className="w-4 h-4" />Copy</button><button type="button" onClick={() => { handleComposerChange(transcriptionText); setTranscriptionOpen(false); }} className="btn btn-sm btn-outline">Insert in composer</button><button type="button" onClick={() => void handleSendAIText(transcriptionText)} disabled={!activeConversationId} className="btn btn-sm btn-primary gap-1"><Send className="w-4 h-4" />Send</button></div>
+            <textarea value={transcriptionText} onChange={(event) => { setTranscriptionText(event.target.value); if (event.target.value.trim()) setTranscriptionTextError(''); }} onBlur={() => { if (!transcriptionText.trim()) setTranscriptionTextError('Transcript cannot be empty.'); }} rows={6} className={`textarea textarea-bordered w-full ${transcriptionTextError ? 'border-red-500 focus:ring-1 focus:ring-red-500' : ''}`} aria-label="Editable transcription" aria-invalid={Boolean(transcriptionTextError)} />
+            {transcriptionTextError && <p className="text-xs text-red-500" role="alert">{transcriptionTextError}</p>}
+            <div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => void navigator.clipboard.writeText(transcriptionText).then(() => toast.success('Copied to clipboard.')).catch(() => toast.error('Clipboard access is unavailable.'))} className="btn btn-sm btn-ghost gap-1"><Copy className="w-4 h-4" />Copy</button><button type="button" onClick={() => { if (!transcriptionText.trim()) { setTranscriptionTextError('Transcript cannot be empty.'); return; } handleComposerChange(transcriptionText); setTranscriptionOpen(false); }} className="btn btn-sm btn-outline">Insert in composer</button><button type="button" onClick={() => { if (!transcriptionText.trim()) { setTranscriptionTextError('Transcript cannot be empty.'); return; } void handleSendAIText(transcriptionText); }} disabled={!activeConversationId} className="btn btn-sm btn-primary gap-1"><Send className="w-4 h-4" />Send</button></div>
           </div>
         </div>
       )}
@@ -2238,15 +2281,19 @@ export function ChatWorkspacePage({
                       );
                     }
                   }}
+                  onBlur={() => {
+                    const trimmed = groupName.trim();
+                    setGroupNameError(!trimmed ? 'Channel name is required.' : trimmed.length < 2 ? 'Channel name must be at least 2 characters.' : '');
+                  }}
                   placeholder="Channel name (e.g., Security Engineering)"
                   aria-invalid={Boolean(groupNameError)}
                   aria-describedby={groupNameError ? 'group-name-error' : undefined}
-                  className={`w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border text-base-content placeholder:text-gray-400 focus:outline-none focus:border-primary ${
-                    groupNameError ? 'border-red-500 focus:border-red-500' : 'border-base-300'
+                  className={`w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border text-base-content placeholder:text-gray-400 focus:outline-none ${
+                    groupNameError ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300 focus:border-primary'
                   }`}
                 />
                 {groupNameError && (
-                  <p id="group-name-error" className="mt-1 text-xs text-red-400" role="alert">
+                  <p id="group-name-error" className="mt-1 text-xs text-red-500" role="alert">
                     {groupNameError}
                   </p>
                 )}
@@ -2322,7 +2369,7 @@ export function ChatWorkspacePage({
                 })}
               </div>
               {groupMembersError && (
-                <p className="mt-1 text-xs text-red-400" role="alert">
+                <p className="mt-1 text-xs text-red-500" role="alert">
                   {groupMembersError}
                 </p>
               )}
@@ -2406,6 +2453,7 @@ export function ChatWorkspacePage({
         >
           <form
             onSubmit={handleSubmitAbuseReport}
+            noValidate
             className="bg-base-200 border border-base-300 rounded-xl p-5 max-w-md w-full space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
@@ -2442,14 +2490,16 @@ export function ChatWorkspacePage({
               <label className="block text-xs font-medium">
                 Details for moderators
                 <textarea
-                  value={reportDetails}
-                  onChange={(e) => setReportDetails(e.target.value)}
                   rows={3}
-                  required
-                  minLength={10}
                   placeholder="Describe why this message violates workspace policy..."
-                  className="mt-1 w-full p-2.5 text-sm rounded-lg bg-base-100 border border-base-300"
+                  value={reportDetails}
+                  aria-invalid={Boolean(reportDetailsError)}
+                  onChange={(e) => { setReportDetails(e.target.value); if (e.target.value.trim().length >= 10) setReportDetailsError(''); }}
+                  onBlur={() => { if (reportDetails.trim().length < 10) setReportDetailsError('Please enter at least 10 characters describing the issue.'); }}
+                  aria-describedby={reportDetailsError ? 'report-details-error' : undefined}
+                  className={`mt-1 w-full p-2.5 text-sm rounded-lg bg-base-100 border ${reportDetailsError ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300'}`}
                 />
+                {reportDetailsError && <span id="report-details-error" className="mt-1 block text-xs text-red-500" role="alert">{reportDetailsError}</span>}
               </label>
             </div>
 

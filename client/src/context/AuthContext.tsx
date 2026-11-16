@@ -58,6 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void refreshUser();
   }, [refreshUser]);
 
+  useEffect(() => {
+    const clearExpiredSession = () => {
+      setUser(null);
+      setSessionId(null);
+    };
+    window.addEventListener('chatsphere:session-expired', clearExpiredSession);
+    return () => window.removeEventListener('chatsphere:session-expired', clearExpiredSession);
+  }, []);
+
   const setAuthenticatedUser = useCallback((nextUser: AuthUser) => {
     setUser(nextUser);
     if (nextUser.settings?.theme === 'light' || nextUser.settings?.theme === 'dark') {

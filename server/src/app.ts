@@ -13,6 +13,7 @@ import { notificationsRouter } from './routes/notifications.routes.ts';
 import { adminRouter } from './routes/admin.routes.ts';
 import { aiRouter } from './routes/ai.routes.ts';
 import { realtimeRouter } from './routes/realtime.routes.ts';
+import { requireAdmin, requireAdminSession } from './middleware/security.ts';
 
 export function createApiApp(
   registerFrontend?: (app: Express) => void,
@@ -80,7 +81,7 @@ export function createApiApp(
   app.use('/api/conversations', conversationsRouter);
   app.use('/api/uploads', uploadsRouter);
   app.use('/api/notifications', notificationsRouter);
-  app.use('/api/admin', adminRouter);
+  app.use('/api/admin', requireAdminSession, requireAdmin, adminRouter);
   app.use('/api/ai', aiRouter);
   app.use('/api/realtime', realtimeRouter);
 

@@ -163,7 +163,7 @@ function AuthInput({
       </label>
       <div
         className={`relative rounded-xl transition-all duration-200 ${
-          focused ? 'ring-1 ring-emerald-500/60 shadow-lg shadow-emerald-500/10' : ''
+          focused ? (error ? 'ring-1 ring-red-500/60 shadow-lg shadow-red-500/10' : 'ring-1 ring-emerald-500/60 shadow-lg shadow-emerald-500/10') : ''
         }`}
       >
         {Icon && (
@@ -174,7 +174,8 @@ function AuthInput({
           {...inputProps}
           onFocus={(e) => { setFocused(true); inputProps.onFocus?.(e); }}
           onBlur={(e) => { setFocused(false); inputProps.onBlur?.(e); }}
-          className={`w-full ${Icon ? 'pl-10' : 'pl-3.5'} ${rightSlot ? 'pr-10' : 'pr-3.5'} py-2.5 text-sm rounded-xl bg-white/4 border ${error ? 'border-red-500/50' : 'border-white/8'} text-white placeholder:text-slate-600 focus:outline-none transition-colors duration-200 ${inputProps.className || ''}`}
+          aria-invalid={Boolean(error)}
+          className={`w-full ${Icon ? 'pl-10' : 'pl-3.5'} ${rightSlot ? 'pr-10' : 'pr-3.5'} py-2.5 text-sm rounded-xl bg-white/4 border ${error ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-white/8'} text-white placeholder:text-slate-600 focus:outline-none transition-colors duration-200 ${inputProps.className || ''}`}
         />
         {rightSlot && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">{rightSlot}</div>
@@ -184,7 +185,7 @@ function AuthInput({
         <motion.p
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-xs text-red-400 mt-1.5 flex items-center gap-1"
+          className="text-xs text-red-500 mt-1.5 flex items-center gap-1"
         >
           {error}
         </motion.p>
@@ -267,6 +268,8 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
 
   const onSubmit = async (values: LoginFormValues) => {
@@ -363,6 +366,8 @@ export function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
@@ -494,6 +499,8 @@ export function VerifyEmailPage() {
     formState: { errors, isSubmitting },
   } = useForm<VerifyOtpFormValues>({
     resolver: zodResolver(verifyOtpFormSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: { email: initialEmail, otp: '' },
   });
 
@@ -607,9 +614,10 @@ export function VerifyEmailPage() {
             id="otp-email"
             type="email"
             {...register('email')}
-            className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
+            aria-invalid={Boolean(errors.email)}
+            className={`w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-800 focus:border-emerald-500'} text-white focus:outline-none`}
           />
-          {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
+          {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
         </div>
 
         <div>
@@ -623,9 +631,10 @@ export function VerifyEmailPage() {
             maxLength={6}
             placeholder="123456"
             {...register('otp')}
-            className="w-full px-4 py-3 text-center tracking-[0.5em] font-mono text-xl rounded-lg bg-slate-950 border border-slate-800 text-emerald-300 focus:outline-none focus:border-emerald-500 tabular-nums"
+            aria-invalid={Boolean(errors.otp)}
+            className={`w-full px-4 py-3 text-center tracking-[0.5em] font-mono text-xl rounded-lg bg-slate-950 border ${errors.otp ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-800 focus:border-emerald-500'} text-emerald-300 focus:outline-none tabular-nums`}
           />
-          {errors.otp && <p className="text-xs text-red-400 mt-1">{errors.otp.message}</p>}
+          {errors.otp && <p className="text-xs text-red-500 mt-1">{errors.otp.message}</p>}
         </div>
 
         <button
@@ -664,6 +673,8 @@ export function ForgotPasswordPage() {
     formState: { errors, isSubmitting },
   } = useForm<ForgotFormValues>({
     resolver: zodResolver(forgotFormSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
 
   const onSubmit = async (values: ForgotFormValues) => {
@@ -733,9 +744,10 @@ export function ForgotPasswordPage() {
               autoComplete="email"
               placeholder="name@company.com"
               {...register('email')}
-              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
+              aria-invalid={Boolean(errors.email)}
+              className={`w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-800 focus:border-emerald-500'} text-white focus:outline-none`}
             />
-            {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
+            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
           </div>
 
           <button
@@ -769,6 +781,8 @@ export function ResetPasswordPage() {
     formState: { errors, isSubmitting },
   } = useForm<ResetFormValues>({
     resolver: zodResolver(resetFormSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
 
   const onSubmit = async (values: ResetFormValues) => {
@@ -818,10 +832,11 @@ export function ResetPasswordPage() {
               autoComplete="new-password"
               placeholder="Min 8 chars, upper, lower & number"
               {...register('newPassword')}
-              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
+              aria-invalid={Boolean(errors.newPassword)}
+              className={`w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border ${errors.newPassword ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-800 focus:border-emerald-500'} text-white focus:outline-none`}
             />
             {errors.newPassword && (
-              <p className="text-xs text-red-400 mt-1">{errors.newPassword.message}</p>
+              <p className="text-xs text-red-500 mt-1">{errors.newPassword.message}</p>
             )}
           </div>
 
@@ -838,10 +853,11 @@ export function ResetPasswordPage() {
               autoComplete="new-password"
               placeholder="Re-enter your new password"
               {...register('confirmPassword')}
-              className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
+              aria-invalid={Boolean(errors.confirmPassword)}
+              className={`w-full px-3.5 py-2.5 text-sm rounded-lg bg-slate-950 border ${errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-800 focus:border-emerald-500'} text-white focus:outline-none`}
             />
             {errors.confirmPassword && (
-              <p className="text-xs text-red-400 mt-1">{errors.confirmPassword.message}</p>
+              <p className="text-xs text-red-500 mt-1">{errors.confirmPassword.message}</p>
             )}
           </div>
 

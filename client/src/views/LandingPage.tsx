@@ -880,7 +880,7 @@ function LandingPageContent() {
               </p>
               <AppLink
                 href="/register"
-                className="mt-6 inline-flex items-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(16,185,129,0.2)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(16,185,129,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07100D] motion-reduce:transform-none"
+                className="mt-6 inline-flex items-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-sm font-semibold !text-white shadow-[0_8px_24px_rgba(16,185,129,0.2)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(16,185,129,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07100D] motion-reduce:transform-none"
               >
                 Create your account
                 <ArrowRight className="ml-2 h-4 w-4" />

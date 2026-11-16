@@ -58,7 +58,9 @@ export function clearAuthCookies(res: Response) {
 
 export async function requireAuth(req: AuthRequest, _res: Response, next: NextFunction) {
   try {
-    const token = req.cookies?.[ACCESS_COOKIE_NAME];
+    const authorization = req.get('authorization');
+    const bearerToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const token = req.cookies?.[ACCESS_COOKIE_NAME] || bearerToken;
     if (!token || typeof token !== 'string') {
       throw Errors.unauthorized('Authentication required. Please sign in.');
     }
@@ -67,7 +69,7 @@ export async function requireAuth(req: AuthRequest, _res: Response, next: NextFu
     try {
       decoded = verifyAccessToken(token);
     } catch {
-      throw Errors.unauthorized('Access token is expired or invalid.', 'TOKEN_EXPIRED');
+      throw Errors.unauthorized('Authentication required. Please sign in.', 'UNAUTHORIZED');
     }
 
     const prisma = getPrisma();
@@ -115,6 +117,26 @@ export async function requireAuth(req: AuthRequest, _res: Response, next: NextFu
   } catch (err) {
     next(err);
   }
+}
+
+/** Admin APIs use a stable 401 contract for absent, expired, or revoked sessions. */
+export async function requireAdminSession(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    await new Promise<void>((resolve, reject) => {
+      requireAuth(req, res, (err?: unknown) => (err ? reject(err) : resolve()));
+    });
+  } catch (err) {
+    if (err instanceof AppError && err.statusCode === 401) {
+      res.status(401).json({
+        success: false,
+        error: { code: 'UNAUTHORIZED', message: 'Authentication required. Please sign in.' },
+      });
+      return;
+    }
+    next(err);
+    return;
+  }
+  next();
 }
 
 export function requireAdmin(req: AuthRequest, _res: Response, next: NextFunction) {

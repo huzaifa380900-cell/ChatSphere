@@ -37,9 +37,12 @@ export function ProfileSettingsPage() {
   const [sessions, setSessions] = useState<ActiveSessionItem[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: {
       displayName: user?.displayName || '',
       bio: user?.bio || '',
@@ -49,6 +52,8 @@ export function ProfileSettingsPage() {
 
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordChangeSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
 
   const loadSessions = useCallback(async () => {
@@ -75,6 +80,12 @@ export function ProfileSettingsPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+      setAvatarError('Choose a JPEG, PNG, WebP, or GIF image.');
+      return;
+    }
+    setAvatarError('');
 
     setAvatarProgress(0);
     try {
@@ -174,6 +185,7 @@ export function ProfileSettingsPage() {
   };
 
   const settings = user?.settings;
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <DashboardShell
@@ -227,19 +239,21 @@ export function ProfileSettingsPage() {
                 </button>
               )}
             </div>
+            {avatarError && <p className="text-xs text-red-500" role="alert">{avatarError}</p>}
           </div>
 
-          <form onSubmit={profileForm.handleSubmit(onSaveProfile)} className="space-y-4">
+          <form onSubmit={profileForm.handleSubmit(onSaveProfile)} className="space-y-4" noValidate>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5">Display name</label>
                 <input
                   type="text"
                   {...profileForm.register('displayName')}
-                  className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+                  aria-invalid={Boolean(profileForm.formState.errors.displayName)}
+                  className={`w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border focus:outline-none ${profileForm.formState.errors.displayName ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300 focus:border-primary'}`}
                 />
                 {profileForm.formState.errors.displayName && (
-                  <p className="text-xs text-error mt-1">
+                  <p className="text-xs text-red-500 mt-1">
                     {profileForm.formState.errors.displayName.message}
                   </p>
                 )}
@@ -251,8 +265,10 @@ export function ProfileSettingsPage() {
                   type="text"
                   placeholder="In deep work until 3 PM"
                   {...profileForm.register('customStatus')}
-                  className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+                  aria-invalid={Boolean(profileForm.formState.errors.customStatus)}
+                  className={`w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border focus:outline-none ${profileForm.formState.errors.customStatus ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300 focus:border-primary'}`}
                 />
+                {profileForm.formState.errors.customStatus && <p className="text-xs text-red-500 mt-1">{profileForm.formState.errors.customStatus.message}</p>}
               </div>
             </div>
 
@@ -262,8 +278,10 @@ export function ProfileSettingsPage() {
                 rows={3}
                 placeholder="Share your team role or focus areas..."
                 {...profileForm.register('bio')}
-                className="w-full p-3 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+                aria-invalid={Boolean(profileForm.formState.errors.bio)}
+                className={`w-full p-3 text-sm rounded-lg bg-base-100 border focus:outline-none ${profileForm.formState.errors.bio ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300 focus:border-primary'}`}
               />
+              {profileForm.formState.errors.bio && <p className="text-xs text-red-500 mt-1">{profileForm.formState.errors.bio.message}</p>}
             </div>
 
             <div className="flex justify-end">
@@ -280,7 +298,9 @@ export function ProfileSettingsPage() {
 
         {/* Privacy, Theme & Notification Controls */}
         <section className="p-6 rounded-xl bg-base-200 border border-base-300 space-y-4">
-          <h3 className="text-base font-semibold">Appearance, Privacy &amp; Notifications</h3>
+          <h3 className="text-base font-semibold">
+            {isAdmin ? 'Appearance' : 'Appearance, Privacy & Notifications'}
+          </h3>
 
           <div className="divide-y divide-base-300/60 text-sm">
             <div className="py-3 flex items-center justify-between gap-4">
@@ -312,7 +332,8 @@ export function ProfileSettingsPage() {
               </div>
             </div>
 
-            {(
+            {!isAdmin && (
+              (
               [
                 [
                   'onlineStatusVisible',
@@ -340,7 +361,7 @@ export function ProfileSettingsPage() {
                   'Receive important security notices at your verified email',
                 ],
               ] as const
-            ).map(([key, label, desc]) => (
+              ).map(([key, label, desc]) => (
               <label
                 key={key}
                 className="py-3 flex items-center justify-between gap-4 cursor-pointer"
@@ -356,7 +377,8 @@ export function ProfileSettingsPage() {
                   className="toggle toggle-primary toggle-sm"
                 />
               </label>
-            ))}
+              ))
+            )}
           </div>
         </section>
 
@@ -370,6 +392,7 @@ export function ProfileSettingsPage() {
           <form
             onSubmit={passwordForm.handleSubmit(onChangePassword)}
             className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end"
+            noValidate
           >
             <div>
               <label className="block text-xs font-medium mb-1.5">Current password</label>
@@ -377,10 +400,11 @@ export function ProfileSettingsPage() {
                 type="password"
                 autoComplete="current-password"
                 {...passwordForm.register('currentPassword')}
-                className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+                aria-invalid={Boolean(passwordForm.formState.errors.currentPassword)}
+                  className={`w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border focus:outline-none ${passwordForm.formState.errors.currentPassword ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300 focus:border-primary'}`}
               />
               {passwordForm.formState.errors.currentPassword && (
-                <p className="text-xs text-error mt-1">
+                  <p className="text-xs text-red-500 mt-1">
                   {passwordForm.formState.errors.currentPassword.message}
                 </p>
               )}
@@ -392,10 +416,11 @@ export function ProfileSettingsPage() {
                 type="password"
                 autoComplete="new-password"
                 {...passwordForm.register('newPassword')}
-                className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+                aria-invalid={Boolean(passwordForm.formState.errors.newPassword)}
+                  className={`w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border focus:outline-none ${passwordForm.formState.errors.newPassword ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300 focus:border-primary'}`}
               />
               {passwordForm.formState.errors.newPassword && (
-                <p className="text-xs text-error mt-1">
+                  <p className="text-xs text-red-500 mt-1">
                   {passwordForm.formState.errors.newPassword.message}
                 </p>
               )}

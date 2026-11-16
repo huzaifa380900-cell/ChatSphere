@@ -6,6 +6,15 @@ const API_BASE_URL = '/api';
 let csrfTokenMemory: string | null = null;
 let csrfPromise: Promise<string> | null = null;
 let refreshPromise: Promise<boolean> | null = null;
+let isRedirecting = false;
+
+function redirectToSignIn() {
+  if (typeof window === 'undefined' || isRedirecting) return;
+  if (window.location.pathname === '/login') return;
+  isRedirecting = true;
+  window.dispatchEvent(new Event('chatsphere:session-expired'));
+  window.location.replace('/login');
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -86,6 +95,10 @@ apiClient.interceptors.response.use(
       }
     }
 
+    if (error.response?.status === 401) {
+      const isAuthEntry = /\/auth\/(login|register|forgot-password|reset-password|refresh)(\/|$)/.test(original?.url || '');
+      if (!isAuthEntry) redirectToSignIn();
+    }
     return Promise.reject(error);
   }
 );

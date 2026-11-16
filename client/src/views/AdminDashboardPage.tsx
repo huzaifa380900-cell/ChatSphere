@@ -106,6 +106,8 @@ export function AdminDashboardPage() {
 
   const [suspendModalUser, setSuspendModalUser] = useState<AdminUserRow | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
+  const [suspendReasonError, setSuspendReasonError] = useState('');
+  const [resolutionNotesError, setResolutionNotesError] = useState('');
 
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([]);
   const [auditActionFilter, setAuditActionFilter] = useState('');
@@ -206,14 +208,17 @@ export function AdminDashboardPage() {
   const handleSuspendConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!suspendModalUser) return;
+    const reason = suspendReason.trim();
+    if (!reason) { setSuspendReasonError('Suspension reason is required.'); return; }
+    setSuspendReasonError('');
     try {
       await apiClient.patch(`/admin/users/${suspendModalUser.id}/status`, {
         status: 'SUSPENDED',
-        reason: suspendReason.trim() || 'Suspended by platform moderator',
+        reason,
       });
       toast.success(`Suspended @${suspendModalUser.username}`);
       setSuspendModalUser(null);
-      setSuspendReason('');
+      setSuspendReason(''); setSuspendReasonError('');
       await loadUsers();
     } catch (err) {
       toast.error(extractApiError(err).message);
@@ -232,7 +237,9 @@ export function AdminDashboardPage() {
 
   const handleResolveReport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeReportModal || resolutionNotes.trim().length < 3) return;
+    if (!activeReportModal) return;
+    if (resolutionNotes.trim().length < 3) { setResolutionNotesError('Enter at least 3 characters of resolution notes.'); return; }
+    setResolutionNotesError('');
     try {
       await apiClient.patch(`/admin/reports/${activeReportModal.id}`, {
         status: resolutionStatus,
@@ -635,6 +642,7 @@ export function AdminDashboardPage() {
           <form
             onSubmit={handleSuspendConfirm}
             className="bg-base-200 border border-base-300 rounded-xl p-5 max-w-md w-full space-y-4"
+            noValidate
           >
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold">
@@ -654,12 +662,15 @@ export function AdminDashboardPage() {
             </p>
             <textarea
               rows={3}
-              required
               value={suspendReason}
-              onChange={(e) => setSuspendReason(e.target.value)}
+              onChange={(e) => { setSuspendReason(e.target.value); if (e.target.value.trim()) setSuspendReasonError(''); }}
+              onBlur={() => { if (!suspendReason.trim()) setSuspendReasonError('Suspension reason is required.'); }}
               placeholder="Enter suspension reason for audit log..."
-              className="w-full p-2.5 text-sm rounded-lg bg-base-100 border border-base-300"
+              aria-invalid={Boolean(suspendReasonError)}
+              aria-describedby={suspendReasonError ? 'suspend-reason-error' : undefined}
+              className={`w-full p-2.5 text-sm rounded-lg bg-base-100 border ${suspendReasonError ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300'}`}
             />
+            {suspendReasonError && <p id="suspend-reason-error" className="-mt-3 text-xs text-red-500" role="alert">{suspendReasonError}</p>}
             <div className="flex justify-end gap-2">
               <button
                 type="button"
@@ -682,6 +693,7 @@ export function AdminDashboardPage() {
           <form
             onSubmit={handleResolveReport}
             className="bg-base-200 border border-base-300 rounded-xl p-5 max-w-md w-full space-y-4"
+            noValidate
           >
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold">Moderate Abuse Report</h3>
@@ -706,13 +718,15 @@ export function AdminDashboardPage() {
 
             <textarea
               rows={3}
-              required
-              minLength={3}
               value={resolutionNotes}
-              onChange={(e) => setResolutionNotes(e.target.value)}
+              onChange={(e) => { setResolutionNotes(e.target.value); if (e.target.value.trim().length >= 3) setResolutionNotesError(''); }}
+              onBlur={() => { if (resolutionNotes.trim().length < 3) setResolutionNotesError('Enter at least 3 characters of resolution notes.'); }}
               placeholder="Moderation resolution notes..."
-              className="w-full p-2.5 text-sm rounded-lg bg-base-100 border border-base-300"
+              aria-invalid={Boolean(resolutionNotesError)}
+              aria-describedby={resolutionNotesError ? 'resolution-notes-error' : undefined}
+              className={`w-full p-2.5 text-sm rounded-lg bg-base-100 border ${resolutionNotesError ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-base-300'}`}
             />
+            {resolutionNotesError && <p id="resolution-notes-error" className="-mt-3 text-xs text-red-500" role="alert">{resolutionNotesError}</p>}
 
             {activeReportModal.message && !activeReportModal.message.isDeleted && (
               <label className="flex items-center gap-2 text-xs cursor-pointer">
