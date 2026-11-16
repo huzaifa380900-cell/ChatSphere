@@ -159,43 +159,61 @@ export function DashboardShell({
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col bg-base-200 border-r border-white/5 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col bg-base-200 border-r border-white/5 transition-[width,transform] duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } ${desktopSidebarCollapsed ? 'lg:w-16' : 'lg:w-60'}`}
       >
-        {/* Logo row */}
-        <div className={`h-16 px-2 flex items-center border-b border-white/5 ${
-          desktopSidebarCollapsed ? 'lg:justify-center' : 'lg:justify-between lg:px-5'
-        } justify-between`}>
-          <AppLink
-            href={user?.role === 'ADMIN' ? '/admin' : '/chat'}
-            onClick={() => setMobileSidebarOpen(false)}
-            className="flex items-center gap-2.5"
-            aria-label="ChatSphere home"
-            title="ChatSphere"
+        {/* Logo and connection status */}
+        <div className={`min-h-16 px-3 py-2 flex items-center justify-between border-b border-white/5 ${
+          desktopSidebarCollapsed
+            ? 'lg:flex-col lg:justify-center lg:gap-1 lg:px-2'
+            : 'lg:px-4'
+        }`}>
+          <div className="flex min-w-0 flex-col">
+            <AppLink
+              href={user?.role === 'ADMIN' ? '/admin' : '/chat'}
+              onClick={() => setMobileSidebarOpen(false)}
+              className="flex items-center"
+              aria-label="ChatSphere home"
+              title="ChatSphere"
+            >
+              <img
+                src="/logo.png"
+                alt=""
+                className={`h-10 w-[120px] shrink-0 object-cover ${
+                  desktopSidebarCollapsed
+                    ? 'lg:h-10 lg:w-10 lg:object-left'
+                    : 'lg:h-12 lg:w-[144px] lg:object-center'
+                }`}
+              />
+            </AppLink>
+            <motion.div
+              animate={{ opacity: 1 }}
+              className={`${desktopSidebarCollapsed ? 'flex lg:hidden' : 'flex'} mt-1 items-center gap-1.5`}
+              title={connected ? 'Real-time connected' : 'Reconnecting…'}
+            >
+              <div className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`}>
+                {connected && (
+                  <span className="block h-2 w-2 rounded-full bg-emerald-400 animate-ping opacity-60" />
+                )}
+              </div>
+              <span className="text-[10px] text-base-content/60 font-mono">
+                {connected ? 'Live' : 'Sync…'}
+              </span>
+            </motion.div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDesktopSidebarCollapsed((collapsed) => !collapsed)}
+            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base-content/60 hover:bg-white/5 hover:text-base-content lg:flex"
+            aria-label={desktopSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={desktopSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={!desktopSidebarCollapsed}
           >
-            <img
-              src="/logo.png"
-              alt=""
-              className={`h-12 w-[144px] shrink-0 object-cover ${
-                desktopSidebarCollapsed ? 'lg:w-10 lg:object-left' : 'lg:w-[144px] lg:object-center'
-              }`}
-            />
-          </AppLink>
-
-          {/* Connection indicator */}
-          <motion.div
-            animate={{ opacity: 1 }}
-            className={`${desktopSidebarCollapsed ? 'lg:hidden' : 'hidden lg:flex'} items-center gap-1.5`}
-            title={connected ? 'Real-time connected' : 'Reconnecting…'}
-          >
-            <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`}>
-              {connected && (
-                <span className="block w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-60" />
-              )}
-            </div>
-            <span className="text-[10px] text-base-content/50 font-mono">{connected ? 'Live' : 'Sync…'}</span>
-          </motion.div>
+            {desktopSidebarCollapsed
+              ? <PanelLeftOpen className="h-5 w-5" />
+              : <PanelLeftClose className="h-5 w-5" />}
+          </button>
           <button
             type="button"
             onClick={() => setMobileSidebarOpen(false)}
@@ -314,21 +332,12 @@ export function DashboardShell({
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
-              onClick={() => {
-                if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) {
-                  setDesktopSidebarCollapsed((collapsed) => !collapsed);
-                } else {
-                  setMobileSidebarOpen((open) => !open);
-                }
-              }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base-content/60 hover:bg-white/5 hover:text-base-content"
-              aria-label="Toggle sidebar"
-              title="Toggle sidebar"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base-content/60 hover:bg-white/5 hover:text-base-content lg:hidden"
+              aria-label="Open navigation menu"
+              title="Open navigation menu"
             >
-              <Menu className="h-5 w-5 lg:hidden" />
-              {desktopSidebarCollapsed
-                ? <PanelLeftOpen className="hidden h-5 w-5 lg:block" />
-                : <PanelLeftClose className="hidden h-5 w-5 lg:block" />}
+              <Menu className="h-5 w-5" />
             </button>
             <div className="min-w-0">
               <h1 className="text-sm font-semibold text-base-content truncate">{title}</h1>

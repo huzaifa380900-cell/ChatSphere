@@ -167,6 +167,8 @@ export function ChatWorkspacePage({
   const [groupAdminOnlyPost, setGroupAdminOnlyPost] = useState(false);
   const [selectedGroupUsers, setSelectedGroupUsers] = useState<PublicUserSummary[]>([]);
   const [creatingGroup, setCreatingGroup] = useState(false);
+  const [groupNameError, setGroupNameError] = useState('');
+  const [groupMembersError, setGroupMembersError] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const transcriptionFileRef = useRef<HTMLInputElement>(null);
@@ -641,8 +643,18 @@ export function ChatWorkspacePage({
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (groupName.trim().length < 2 || selectedGroupUsers.length === 0) {
-      toast.error('Provide a group name and select at least one member.');
+    const trimmedName = groupName.trim();
+    const nameError = trimmedName.length === 0
+      ? 'Channel name is required.'
+      : trimmedName.length < 2
+        ? 'Channel name must be at least 2 characters.'
+        : '';
+    const membersError = selectedGroupUsers.length === 0
+      ? 'Select at least one member.'
+      : '';
+    setGroupNameError(nameError);
+    setGroupMembersError(membersError);
+    if (nameError || membersError) {
       return;
     }
     setCreatingGroup(true);
@@ -662,6 +674,8 @@ export function ChatWorkspacePage({
       setGroupName('');
       setGroupDesc('');
       setSelectedGroupUsers([]);
+      setGroupNameError('');
+      setGroupMembersError('');
       toast.success('Group channel created.');
     } catch (err) {
       toast.error(extractApiError(err).message);
@@ -788,6 +802,8 @@ export function ChatWorkspacePage({
             onClick={() => {
               setUserSearchTerm('');
               setSelectedGroupUsers([]);
+              setGroupNameError('');
+              setGroupMembersError('');
               setGroupModalOpen(true);
             }}
             className="btn btn-sm btn-primary gap-1.5 whitespace-nowrap"
@@ -1623,7 +1639,11 @@ export function ChatWorkspacePage({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setGroupModalOpen(true)}
+                  onClick={() => {
+                    setGroupNameError('');
+                    setGroupMembersError('');
+                    setGroupModalOpen(true);
+                  }}
                   className="btn btn-sm btn-primary"
                 >
                   Create Group
@@ -1768,7 +1788,7 @@ export function ChatWorkspacePage({
           role="dialog"
           aria-modal="true"
           aria-labelledby="ai-writer-title"
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-3 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#080F0D]/85 p-3 sm:p-6"
           onClick={() => !aiWorking && setAiWriterOpen(false)}
         >
           <div
@@ -1933,7 +1953,7 @@ export function ChatWorkspacePage({
           role="dialog"
           aria-modal="true"
           aria-labelledby="ai-sticker-title"
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-3 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#080F0D]/85 p-3 sm:p-6"
           onClick={() => !aiWorking && setAiStickerOpen(false)}
         >
           <div
@@ -2058,7 +2078,7 @@ export function ChatWorkspacePage({
       )}
 
       {transcriptionOpen && (
-        <div role="dialog" aria-modal="true" aria-labelledby="transcription-title" className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-3 sm:p-6" onClick={() => setTranscriptionOpen(false)}>
+        <div role="dialog" aria-modal="true" aria-labelledby="transcription-title" className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-3 sm:p-6" onClick={() => setTranscriptionOpen(false)}>
           <div className="bg-base-200 border border-base-300 rounded-2xl p-4 sm:p-6 w-full max-w-xl space-y-4" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between"><div><h2 id="transcription-title" className="text-lg font-bold">Voice transcription</h2><p className="text-xs text-base-content/60">Review and edit the transcript before using it.</p></div><button type="button" onClick={() => setTranscriptionOpen(false)} className="btn btn-sm btn-ghost btn-square" aria-label="Close transcription"><X className="w-4 h-4" /></button></div>
             <textarea value={transcriptionText} onChange={(event) => setTranscriptionText(event.target.value)} rows={6} className="textarea textarea-bordered w-full" aria-label="Editable transcription" />
@@ -2078,7 +2098,7 @@ export function ChatWorkspacePage({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-4"
         >
           <div className="bg-base-200 border border-base-300 rounded-xl p-6 max-w-sm w-full space-y-4">
             <h3 className="text-base font-semibold">Delete message?</h3>
@@ -2111,7 +2131,7 @@ export function ChatWorkspacePage({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-4"
           onClick={() => setDmModalOpen(false)}
         >
           <div
@@ -2179,11 +2199,12 @@ export function ChatWorkspacePage({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-4"
           onClick={() => setGroupModalOpen(false)}
         >
           <form
             onSubmit={handleCreateGroup}
+            noValidate
             className="bg-base-200 border border-base-300 rounded-xl p-5 max-w-lg w-full space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
@@ -2199,20 +2220,43 @@ export function ChatWorkspacePage({
             </div>
 
             <div className="space-y-3">
-              <input
-                type="text"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                placeholder="Channel name (e.g., Security Engineering)"
-                required
-                className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
-              />
+              <div>
+                <input
+                  type="text"
+                  value={groupName}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const trimmedValue = value.trim();
+                    setGroupName(value);
+                    if (groupNameError) {
+                      setGroupNameError(
+                        trimmedValue.length === 0
+                          ? 'Channel name is required.'
+                          : trimmedValue.length < 2
+                            ? 'Channel name must be at least 2 characters.'
+                            : ''
+                      );
+                    }
+                  }}
+                  placeholder="Channel name (e.g., Security Engineering)"
+                  aria-invalid={Boolean(groupNameError)}
+                  aria-describedby={groupNameError ? 'group-name-error' : undefined}
+                  className={`w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border text-base-content placeholder:text-gray-400 focus:outline-none focus:border-primary ${
+                    groupNameError ? 'border-red-500 focus:border-red-500' : 'border-base-300'
+                  }`}
+                />
+                {groupNameError && (
+                  <p id="group-name-error" className="mt-1 text-xs text-red-400" role="alert">
+                    {groupNameError}
+                  </p>
+                )}
+              </div>
               <input
                 type="text"
                 value={groupDesc}
                 onChange={(e) => setGroupDesc(e.target.value)}
                 placeholder="Optional channel purpose or description"
-                className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+                className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 text-base-content placeholder:text-gray-400 focus:outline-none focus:border-primary"
               />
               <label className="flex items-center gap-2 text-xs cursor-pointer">
                 <input
@@ -2248,32 +2292,40 @@ export function ChatWorkspacePage({
               value={userSearchTerm}
               onChange={(e) => setUserSearchTerm(e.target.value)}
               placeholder="Search users to add..."
-              className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 focus:outline-none focus:border-primary"
+              className="w-full px-3.5 py-2 text-sm rounded-lg bg-base-100 border border-base-300 text-base-content placeholder:text-gray-400 focus:outline-none focus:border-primary"
             />
 
-            <div className="max-h-48 overflow-y-auto divide-y divide-base-300/60">
-              {userSearchResults.map((u) => {
-                const chosen = selectedGroupUsers.some((x) => x.id === u.id);
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() =>
-                      setSelectedGroupUsers((prev) =>
-                        chosen ? prev.filter((x) => x.id !== u.id) : [...prev, u]
-                      )
-                    }
-                    className="w-full text-left py-2 px-2 hover:bg-base-300/50 flex items-center justify-between text-xs cursor-pointer"
-                  >
-                    <span>
-                      <strong className="font-medium">{u.displayName}</strong> · @{u.username}
-                    </span>
-                    <span className={chosen ? 'text-primary font-semibold' : 'text-base-content/50'}>
-                      {chosen ? 'Selected' : 'Add'}
-                    </span>
-                  </button>
-                );
-              })}
+            <div>
+              <div className="max-h-48 overflow-y-auto divide-y divide-base-300/60">
+                {userSearchResults.map((u) => {
+                  const chosen = selectedGroupUsers.some((x) => x.id === u.id);
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedGroupUsers((prev) =>
+                          chosen ? prev.filter((x) => x.id !== u.id) : [...prev, u]
+                        );
+                        setGroupMembersError('');
+                      }}
+                      className="w-full text-left py-2 px-2 hover:bg-base-300/50 flex items-center justify-between text-xs cursor-pointer"
+                    >
+                      <span>
+                        <strong className="font-medium">{u.displayName}</strong> · @{u.username}
+                      </span>
+                      <span className={chosen ? 'text-primary font-semibold' : 'text-base-content/50'}>
+                        {chosen ? 'Selected' : 'Add'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {groupMembersError && (
+                <p className="mt-1 text-xs text-red-400" role="alert">
+                  {groupMembersError}
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
@@ -2297,7 +2349,7 @@ export function ChatWorkspacePage({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-4"
           onClick={() => setAddMemberModalOpen(false)}
         >
           <div
@@ -2349,7 +2401,7 @@ export function ChatWorkspacePage({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-4"
           onClick={() => setReportTargetMsg(null)}
         >
           <form

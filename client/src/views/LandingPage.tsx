@@ -535,7 +535,7 @@ function LandingPageContent() {
     [0, 80],
     theme === 'light'
       ? ['rgba(248,251,250,0)', 'rgba(248,251,250,0.94)']
-      : ['rgba(8,14,26,0)', 'rgba(8,14,26,0.92)']
+      : ['rgba(8,15,13,0)', 'rgba(8,15,13,0.96)']
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

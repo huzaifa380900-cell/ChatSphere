@@ -631,7 +631,7 @@ export function AdminDashboardPage() {
 
       {/* Suspend User Modal */}
       {suspendModalUser && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-4">
           <form
             onSubmit={handleSuspendConfirm}
             className="bg-base-200 border border-base-300 rounded-xl p-5 max-w-md w-full space-y-4"
@@ -678,7 +678,7 @@ export function AdminDashboardPage() {
 
       {/* Resolve Report Modal */}
       {activeReportModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-[#080F0D]/85 flex items-center justify-center p-4">
           <form
             onSubmit={handleResolveReport}
             className="bg-base-200 border border-base-300 rounded-xl p-5 max-w-md w-full space-y-4"

@@ -70,6 +70,35 @@
     scroll-behavior: smooth;
   }
 
+  :focus-visible {
+    outline: 2px solid #34D399;
+    outline-offset: 2px;
+  }
+
+  html[data-theme="chatsphere"] :is(input, textarea)::placeholder,
+  .page-theme-scope[data-page-theme="dark"] :is(input, textarea)::placeholder {
+    color: #9CA3AF;
+    opacity: 1;
+  }
+
+  html[data-theme="chatsphere-light"] :is(input, textarea)::placeholder {
+    color: #6B7280;
+    opacity: 1;
+  }
+
+  html[data-theme="chatsphere"] :is(input, textarea, select):-webkit-autofill,
+  .page-theme-scope[data-page-theme="dark"] :is(input, textarea, select):-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #080F0D inset;
+    -webkit-text-fill-color: #E8F0EC;
+    caret-color: #E8F0EC;
+  }
+
+  .page-theme-scope[data-page-theme="light"] :is(input, textarea, select):-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
+    -webkit-text-fill-color: #172A25;
+    caret-color: #172A25;
+  }
+
   h1, h2, h3, h4 {
     font-family: var(--font-display);
   }
@@ -315,6 +344,38 @@
 .page-theme-scope[data-page-theme="dark"] .animated-bg {
   background: linear-gradient(-45deg, #0b1210, #101c18, #0c1915, #080f0d);
   background-size: 400% 400%;
+}
+
+.page-theme-scope[data-page-theme="dark"] :is(.landing-page, .auth-page) :is(
+  .text-slate-300,
+  .text-slate-400,
+  .text-slate-500,
+  .text-slate-600,
+  .text-slate-700
+) {
+  color: #E8F0EC !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] .auth-page [class~="bg-slate-950"] {
+  background-color: #080F0D !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] .auth-page [class~="bg-slate-800"]:hover {
+  background-color: #1B2A24 !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] .auth-page :is(
+  [class~="border-slate-800"],
+  [class~="border-slate-700"],
+  [class~="border-slate-950/30"],
+  [class~="border-t-slate-950"]
+) {
+  border-color: #1B2A24 !important;
+}
+
+.page-theme-scope[data-page-theme="dark"] :is(input, textarea, select)::placeholder {
+  color: #9CA3AF !important;
+  opacity: 1;
 }
 
 .page-theme-scope[data-page-theme="light"] .animated-bg {

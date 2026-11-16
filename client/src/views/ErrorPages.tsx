@@ -44,11 +44,11 @@ export function AppErrorScreen({
 }) {
   return (
     <div className="min-h-screen bg-[#080F0D] text-slate-100 flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-[#101C18] border border-slate-800 rounded-xl p-8 text-center space-y-5">
+      <div className="max-w-md w-full bg-[#101C18] border border-base-300 rounded-xl p-8 text-center space-y-5">
         <AlertTriangle className="w-11 h-11 text-amber-400 mx-auto" />
         <div className="space-y-1.5">
           <h1 className="text-xl font-bold text-white">Application error</h1>
-          <p className="text-sm text-slate-400">{message}</p>
+          <p className="text-sm text-base-content">{message}</p>
         </div>
         <button
           type="button"

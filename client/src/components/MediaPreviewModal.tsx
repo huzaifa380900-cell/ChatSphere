@@ -67,7 +67,7 @@ export function MediaPreviewModal({ attachment, onClose }: MediaPreviewModalProp
       role="dialog"
       aria-modal="true"
       aria-label={`Preview ${attachment.originalFilename}`}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#080F0D]/90 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
