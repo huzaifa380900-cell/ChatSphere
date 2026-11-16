@@ -18,6 +18,8 @@ import {
   ChevronRight,
   Send,
   Sparkles,
+  Github,
+  Linkedin,
 } from 'lucide-react';
 import { AppLink, useRouter } from '../context/RouterContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -858,15 +860,19 @@ function LandingPageContent() {
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className="mt-auto border-t border-white/10 bg-[#07100D] px-5 pt-16 pb-8 sm:px-8">
+      <footer className="relative isolate mt-auto overflow-hidden border-t border-emerald-400/10 bg-[#07100D] px-5 pb-7 pt-14 sm:px-8 sm:pt-16">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-emerald-400/[0.07] via-emerald-950/10 to-transparent"
+        />
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-12 border-b border-white/10 pb-12 sm:grid-cols-3 lg:grid-cols-4 lg:gap-12">
-            <div className="col-span-2 sm:col-span-3 lg:col-span-2">
-              <AppLink href="/" className="inline-flex items-center" aria-label="ChatSphere home">
+          <div className="grid grid-cols-1 gap-10 border-b border-white/10 pb-10 sm:grid-cols-2 sm:gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.7fr)_minmax(0,0.7fr)] lg:gap-16 lg:pb-12">
+            <div>
+              <AppLink href="/" className="inline-flex items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400" aria-label="ChatSphere home">
                 <img
                   src="/logo.png"
                   alt="ChatSphere"
-                  className="h-12 w-[152px] object-cover object-center"
+                  className="h-11 w-[152px] object-contain object-left"
                 />
               </AppLink>
               <p className="mt-4 max-w-md text-sm leading-6 text-slate-400">
@@ -874,37 +880,71 @@ function LandingPageContent() {
               </p>
               <AppLink
                 href="/register"
-                className="mt-6 inline-flex items-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
+                className="mt-6 inline-flex items-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(16,185,129,0.2)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(16,185,129,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07100D] motion-reduce:transform-none"
               >
                 Create your account
                 <ArrowRight className="ml-2 h-4 w-4" />
               </AppLink>
+              <div className="mt-7 flex items-center gap-2.5">
+                <a
+                  href="https://github.com/huzaifa380900-cell/ChatSphere"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="ChatSphere on GitHub"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-slate-400 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-emerald-400/10 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                >
+                  <Github className="h-4 w-4" aria-hidden="true" />
+                </a>
+                <a
+                  href="https://x.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="X"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-slate-400 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-emerald-400/10 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-current">
+                    <path d="M18.901 1.153h3.68l-8.04 9.19 9.46 12.5h-7.4l-5.8-7.58-6.63 7.58h-3.68l8.6-9.83L.99 1.15h7.59l5.24 6.93zm-1.29 19.49h2.04L7.47 3.24H5.28z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://www.linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-slate-400 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-emerald-400/10 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                >
+                  <Linkedin className="h-4 w-4" aria-hidden="true" />
+                </a>
+              </div>
             </div>
 
             <nav aria-label="Footer product links">
-              <h2 className="text-sm font-semibold text-white">Explore</h2>
-              <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                <li><a href="#features" className="transition-colors hover:text-white">Features</a></li>
-                <li><a href="#preview" className="transition-colors hover:text-white">Workspace preview</a></li>
-                <li><a href="#security" className="transition-colors hover:text-white">Security</a></li>
-                <li><a href="#top" className="transition-colors hover:text-white">Back to top</a></li>
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Explore</h2>
+              <ul className="mt-5 space-y-3.5 text-sm text-slate-400">
+                <li><a href="#features" className="transition-colors duration-200 hover:text-emerald-300">Features</a></li>
+                <li><a href="#preview" className="transition-colors duration-200 hover:text-emerald-300">Workspace preview</a></li>
+                <li><a href="#security" className="transition-colors duration-200 hover:text-emerald-300">Security</a></li>
+                <li><a href="#top" className="transition-colors duration-200 hover:text-emerald-300">Back to top</a></li>
               </ul>
             </nav>
 
             <nav aria-label="Footer account links">
-              <h2 className="text-sm font-semibold text-white">Your account</h2>
-              <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                <li><AppLink href="/login" className="transition-colors hover:text-white">Sign in</AppLink></li>
-                <li><AppLink href="/register" className="transition-colors hover:text-white">Create account</AppLink></li>
-                <li><AppLink href="/verify-email" className="transition-colors hover:text-white">Verify email</AppLink></li>
-                <li><AppLink href="/forgot-password" className="transition-colors hover:text-white">Forgot password</AppLink></li>
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Your account</h2>
+              <ul className="mt-5 space-y-3.5 text-sm text-slate-400">
+                <li><AppLink href="/login" className="transition-colors duration-200 hover:text-emerald-300">Sign in</AppLink></li>
+                <li><AppLink href="/register" className="transition-colors duration-200 hover:text-emerald-300">Create account</AppLink></li>
+                <li><AppLink href="/verify-email" className="transition-colors duration-200 hover:text-emerald-300">Verify email</AppLink></li>
+                <li><AppLink href="/forgot-password" className="transition-colors duration-200 hover:text-emerald-300">Forgot password</AppLink></li>
               </ul>
             </nav>
           </div>
 
           <div className="flex flex-col gap-3 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <p suppressHydrationWarning>© {new Date().getFullYear()} ChatSphere. All rights reserved.</p>
-            <p>Private conversations. Connected in real time.</p>
+            <p className="flex items-center gap-2 sm:justify-end">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.7)]" />
+              Private conversations. Connected in real time.
+            </p>
           </div>
         </div>
       </footer>
